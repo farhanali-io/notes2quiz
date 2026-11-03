@@ -8,6 +8,16 @@ export interface Env {
 const CF_ACCOUNT_ID = '931205dbdf3d4664f1df1d1c993ab209';
 const CF_GATEWAY_ID = 'notes2quiz-gateway';
 
+// 🔑 Timeout (milliseconds) — AI Gateway default ~100s hai, isliye barhaya
+const AI_GATEWAY_TIMEOUT_MS = '120000'; // 120 seconds
+
+// ✅ Current stable Gemini models (Nov 2026)
+const GEMINI_MODELS = [
+  'gemini-3.8-flash',       // Primary
+  'gemini-3.6-flash',       // Fallback 1
+  'gemini-3.5-flash-lite',  // Fallback 2 (fastest)
+];
+
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
@@ -144,9 +154,7 @@ async function callGeminiDirect(
   responseMimeType?: string
 ): Promise<{ text: string; model: string }> {
   const urls = [
-    // Try AI Gateway first (bypasses "User location not supported")
     `https://gateway.ai.cloudflare.com/v1/${CF_ACCOUNT_ID}/${CF_GATEWAY_ID}/google-ai-studio/v1beta/models/${model}:generateContent?key=${apiKey}`,
-    // Fallback to direct Google endpoint
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
   ];
 
@@ -163,21 +171,29 @@ async function callGeminiDirect(
     try {
       const res = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          // 🔑 AI Gateway timeout (default ~100s hai)
+          'cf-aig-request-timeout': AI_GATEWAY_TIMEOUT_MS,
+        },
         body: JSON.stringify(body),
       });
 
       if (!res.ok) {
         const errText = await res.text();
         lastError = `HTTP ${res.status}: ${errText.slice(0, 300)}`;
-        console.warn(`[GEMINI ${model}] ${url.includes('gateway') ? 'GATEWAY' : 'DIRECT'} → ${lastError}`);
+        console.warn(
+          `[GEMINI ${model}] ${url.includes('gateway') ? 'GATEWAY' : 'DIRECT'} → ${lastError}`
+        );
         continue;
       }
 
       const data: any = await res.json();
       const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
       if (text) {
-        console.log(`[GEMINI ${model}] ✓ success via ${url.includes('gateway') ? 'GATEWAY' : 'DIRECT'}`);
+        console.log(
+          `[GEMINI ${model}] ✓ success via ${url.includes('gateway') ? 'GATEWAY' : 'DIRECT'}`
+        );
         return { text, model };
       }
       lastError = 'Empty response from model';
@@ -202,6 +218,8 @@ async function callGroq(
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${apiKey}`,
+      // 🔑 AI Gateway timeout
+      'cf-aig-request-timeout': AI_GATEWAY_TIMEOUT_MS,
     },
     body: JSON.stringify({
       model: 'llama-3.1-8b-instant',
@@ -234,28 +252,41 @@ export async function handleApiRequest(request: Request, env: Env): Promise<Resp
       gemini: Boolean(geminiKey && geminiKey !== 'MY_GEMINI_API_KEY'),
       groq: Boolean(groqKey),
       gatewayConfigured: Boolean(
-        CF_ACCOUNT_ID && CF_GATEWAY_ID &&
-        CF_ACCOUNT_ID !== 'YOUR_ACCOUNT_ID' &&
-        CF_GATEWAY_ID !== 'YOUR_GATEWAY_ID'
+        CF_ACCOUNT_ID &&
+          CF_GATEWAY_ID &&
+          CF_ACCOUNT_ID !== 'YOUR_ACCOUNT_ID' &&
+          CF_GATEWAY_ID !== 'YOUR_GATEWAY_ID'
       ),
+      timeoutMs: Number(AI_GATEWAY_TIMEOUT_MS),
+      models: GEMINI_MODELS,
       status: 'ok',
     });
   }
 
   // -------- /api/test-gemini (DIAGNOSTIC ENDPOINT) --------
   if (url.pathname === '/api/test-gemini' && request.method === 'GET') {
-    const models = ['gemini-3.8-flash', 'gemini-2.5-flash', 'gemini-2.0-flash'];
     const results: any[] = [];
-    for (const model of models) {
+    for (const model of GEMINI_MODELS) {
+      const start = Date.now();
       try {
         const r = await callGeminiDirect(
           geminiKey,
           model,
           [{ role: 'user', parts: [{ text: 'Say hello in one word.' }] }]
         );
-        results.push({ model, ok: true, sample: r.text.slice(0, 100) });
+        results.push({
+          model,
+          ok: true,
+          ms: Date.now() - start,
+          sample: r.text.slice(0, 100),
+        });
       } catch (e: any) {
-        results.push({ model, ok: false, error: e.message });
+        results.push({
+          model,
+          ok: false,
+          ms: Date.now() - start,
+          error: e.message,
+        });
       }
     }
     return jsonResponse({ geminiKeyPresent: Boolean(geminiKey), results });
@@ -275,7 +306,8 @@ export async function handleApiRequest(request: Request, env: Env): Promise<Resp
       return jsonResponse({ error: 'Notes text is required.' }, 400);
     }
 
-    const MAX_NOTES_LENGTH = 8000;
+    // ✂️ Chhoti truncation — 524 timeout se bachne ke liye
+    const MAX_NOTES_LENGTH = 4000;
     const truncatedNotes =
       notes.length > MAX_NOTES_LENGTH
         ? notes.slice(0, MAX_NOTES_LENGTH) + '\n\n[... notes truncated ...]'
@@ -308,10 +340,9 @@ Respond with valid JSON matching this schema:
     let fallbackShifted = false;
     const diagnostics: any = { geminiAttempts: [], groqError: '' };
 
-    // 1. Try Gemini — multiple models
+    // 1. Gemini — multiple current models
     if (geminiKey && geminiKey !== 'MY_GEMINI_API_KEY') {
-      const geminiModels = ['gemini-3.8-flash', 'gemini-2.5-flash', 'gemini-2.0-flash'];
-      for (const model of geminiModels) {
+      for (const model of GEMINI_MODELS) {
         if (generatedJsonStr) break;
         try {
           const r = await callGeminiDirect(
@@ -357,13 +388,19 @@ Respond with valid JSON matching this schema:
     }
 
     try {
-      const cleanJson = generatedJsonStr.replace(/^```json\s*/i, '').replace(/\s*```$/, '').trim();
+      const cleanJson = generatedJsonStr
+        .replace(/^```json\s*/i, '')
+        .replace(/\s*```$/, '')
+        .trim();
       const parsed = JSON.parse(cleanJson);
       const normalized = normalizeStudyPack(parsed, examDate);
       if (fallbackShifted) normalized._fallbackShifted = true;
       return jsonResponse(normalized);
     } catch {
-      return jsonResponse({ error: 'Failed to parse AI study pack response. Please retry.' }, 500);
+      return jsonResponse(
+        { error: 'Failed to parse AI study pack response. Please retry.' },
+        500
+      );
     }
   }
 
@@ -404,7 +441,6 @@ Answer directly and concisely.`;
 
     // 1. Gemini
     if (geminiKey && geminiKey !== 'MY_GEMINI_API_KEY') {
-      const geminiModels = ['gemini-3.8-flash', 'gemini-2.5-flash', 'gemini-2.0-flash'];
       const contents = [
         ...history.map((m: any) => ({
           role: m.role === 'assistant' ? 'model' : 'user',
@@ -412,7 +448,7 @@ Answer directly and concisely.`;
         })),
         { role: 'user', parts: [{ text: userMessage }] },
       ];
-      for (const model of geminiModels) {
+      for (const model of GEMINI_MODELS) {
         if (replyText) break;
         try {
           const r = await callGeminiDirect(geminiKey, model, contents, systemInstruction);
