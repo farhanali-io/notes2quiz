@@ -1,17 +1,9 @@
-import express from 'express';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import dotenv from 'dotenv';
 import { GoogleGenAI } from '@google/genai';
-import { createServer as createViteServer } from 'vite';
-
-dotenv.config();
 
 export interface Env {
   GEMINI_API_KEY?: string;
   GROQ_API_KEY?: string;
   ASSETS?: { fetch: (req: Request) => Promise<Response> };
-  [key: string]: any;
 }
 
 const CORS_HEADERS = {
@@ -46,10 +38,7 @@ function normalizeStudyPack(raw: any, examDate?: string): any {
   }
 
   if (Array.isArray(raw.keyPoints)) {
-    result.keyPoints = {
-      summary: 'High-Yield Points',
-      points: raw.keyPoints,
-    };
+    result.keyPoints = { summary: 'High-Yield Points', points: raw.keyPoints };
   }
 
   if (Array.isArray(raw.mcqs)) {
@@ -153,7 +142,11 @@ function normalizeStudyPack(raw: any, examDate?: string): any {
   return result;
 }
 
-async function callGroq(apiKey: string, messages: { role: string; content: string }[], jsonMode = false) {
+async function callGroq(
+  apiKey: string,
+  messages: { role: string; content: string }[],
+  jsonMode = false
+) {
   const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -182,10 +175,8 @@ export async function handleApiRequest(request: Request, env: Env): Promise<Resp
     return new Response(null, { status: 204, headers: CORS_HEADERS });
   }
 
-  const geminiKey =
-    env.GEMINI_API_KEY || (typeof process !== 'undefined' ? process.env?.GEMINI_API_KEY : '');
-  const groqKey =
-    env.GROQ_API_KEY || (typeof process !== 'undefined' ? process.env?.GROQ_API_KEY : '');
+  const geminiKey = env.GEMINI_API_KEY || '';
+  const groqKey = env.GROQ_API_KEY || '';
 
   // GET /api/health
   if (url.pathname === '/api/health' && request.method === 'GET') {
@@ -240,13 +231,9 @@ Respond with valid JSON matching this schema:
     let generatedJsonStr = '';
     let fallbackShifted = false;
 
-    // 1. Try Gemini (gemini-2.5-flash)
     if (geminiKey && geminiKey.trim() && geminiKey !== 'MY_GEMINI_API_KEY') {
       try {
-        const ai = new GoogleGenAI({
-          apiKey: geminiKey,
-          httpOptions: { headers: { 'User-Agent': 'aistudio-build' } },
-        });
+        const ai = new GoogleGenAI({ apiKey: geminiKey });
         const response = await ai.models.generateContent({
           model: 'gemini-2.5-flash',
           contents: [{ role: 'user', parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] }],
@@ -258,7 +245,6 @@ Respond with valid JSON matching this schema:
       }
     }
 
-    // 2. Try Groq fallback (llama-3.3-70b-versatile)
     if (!generatedJsonStr && groqKey && groqKey.trim()) {
       try {
         generatedJsonStr = await callGroq(
@@ -292,10 +278,7 @@ Respond with valid JSON matching this schema:
       if (fallbackShifted) normalized._fallbackShifted = true;
       return jsonResponse(normalized);
     } catch {
-      return jsonResponse(
-        { error: 'Failed to parse AI study pack response. Please retry.' },
-        500
-      );
+      return jsonResponse({ error: 'Failed to parse AI study pack response. Please retry.' }, 500);
     }
   }
 
@@ -334,13 +317,9 @@ Answer the student's question directly, accurately, and concisely.`;
     let replyText = '';
     let fallbackShifted = false;
 
-    // 1. Try Gemini
     if (geminiKey && geminiKey.trim() && geminiKey !== 'MY_GEMINI_API_KEY') {
       try {
-        const ai = new GoogleGenAI({
-          apiKey: geminiKey,
-          httpOptions: { headers: { 'User-Agent': 'aistudio-build' } },
-        });
+        const ai = new GoogleGenAI({ apiKey: geminiKey });
         const contents = [
           ...history.map((m: any) => ({
             role: m.role === 'assistant' ? 'model' : 'user',
@@ -359,7 +338,6 @@ Answer the student's question directly, accurately, and concisely.`;
       }
     }
 
-    // 2. Try Groq fallback
     if (!replyText && groqKey && groqKey.trim()) {
       try {
         const groqMessages = [
@@ -391,7 +369,7 @@ Answer the student's question directly, accurately, and concisely.`;
   return jsonResponse({ error: 'Endpoint not found' }, 404);
 }
 
-// Cloudflare Worker export
+// Cloudflare Worker default export
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
@@ -404,68 +382,3 @@ export default {
     return new Response('Not found', { status: 404 });
   },
 };
-
-// Node.js development server for AI Studio (runs on port 3000)
-if (typeof process !== 'undefined' && process.env) {
-  const isMain =
-    process.argv[1] &&
-    (process.argv[1].endsWith('server.ts') || process.argv[1].endsWith('server.js'));
-
-  if (isMain) {
-    const app = express();
-    const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
-    const __filename = fileURLToPath(import.meta.url);
-    const __dirname = path.dirname(__filename);
-
-    app.use(express.json({ limit: '15mb' }));
-
-    // Route all /api/* through the Cloudflare Worker API handler
-    app.all('/api/*', async (req, res) => {
-      try {
-        const fullUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
-        const headers = new Headers();
-        for (const [key, val] of Object.entries(req.headers)) {
-          if (val) headers.set(key, Array.isArray(val) ? val.join(',') : val);
-        }
-
-        const workerReq = new Request(fullUrl, {
-          method: req.method,
-          headers,
-          body: ['GET', 'HEAD', 'OPTIONS'].includes(req.method)
-            ? undefined
-            : JSON.stringify(req.body),
-        });
-
-        const workerRes = await handleApiRequest(workerReq, process.env as Env);
-        res.status(workerRes.status);
-        workerRes.headers.forEach((v, k) => res.setHeader(k, v));
-        const bodyText = await workerRes.text();
-        res.send(bodyText);
-      } catch (err: any) {
-        console.error('API Error in dev server:', err);
-        res.status(500).json({ error: err.message || 'Server error' });
-      }
-    });
-
-    // Setup Vite middleware in dev or static files in production
-    (async () => {
-      const isProd = process.env.NODE_ENV === 'production';
-      if (!isProd) {
-        const vite = await createViteServer({
-          server: { middlewareMode: true },
-          appType: 'spa',
-        });
-        app.use(vite.middlewares);
-      } else {
-        app.use(express.static(path.resolve(__dirname, 'dist')));
-        app.get('*', (_req, res) => {
-          res.sendFile(path.resolve(__dirname, 'dist', 'index.html'));
-        });
-      }
-
-      app.listen(PORT, '0.0.0.0', () => {
-        console.log(`Notes2Quiz server running on http://0.0.0.0:${PORT}`);
-      });
-    })();
-  }
-}
