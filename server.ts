@@ -6,6 +6,10 @@ export interface Env {
   ASSETS?: { fetch: (req: Request) => Promise<Response> };
 }
 
+// ⚠️ YAHAN APNI VALUES DAALEIN:
+const CF_ACCOUNT_ID = '931205dbdf3d4664f1df1d1c993ab209';       // e.g. 931205dbdf3d4664f1df1d1c993ab209
+const CF_GATEWAY_ID = 'notes2quiz-gateway';       // e.g. notes2quiz-gateway
+
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
@@ -47,7 +51,8 @@ function normalizeStudyPack(raw: any, examDate?: string): any {
       let correctIndex = typeof m.correctIndex === 'number' ? m.correctIndex : 0;
       if (m.correctAnswer && options.length > 0) {
         const found = options.findIndex(
-          (opt: string) => opt.trim().toLowerCase() === String(m.correctAnswer).trim().toLowerCase()
+          (opt: string) =>
+            opt.trim().toLowerCase() === String(m.correctAnswer).trim().toLowerCase()
         );
         if (found !== -1) correctIndex = found;
       }
@@ -92,7 +97,8 @@ function normalizeStudyPack(raw: any, examDate?: string): any {
           let correctIndex = typeof m.correctIndex === 'number' ? m.correctIndex : 0;
           if (m.correctAnswer && options.length > 0) {
             const found = options.findIndex(
-              (opt: string) => opt.trim().toLowerCase() === String(m.correctAnswer).trim().toLowerCase()
+              (opt: string) =>
+                opt.trim().toLowerCase() === String(m.correctAnswer).trim().toLowerCase()
             );
             if (found !== -1) correctIndex = found;
           }
@@ -147,7 +153,10 @@ async function callGroq(
   messages: { role: string; content: string }[],
   jsonMode = false
 ) {
-  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+  // 🔧 Cloudflare AI Gateway ke through Groq call
+  const groqUrl = `https://gateway.ai.cloudflare.com/v1/${CF_ACCOUNT_ID}/${CF_GATEWAY_ID}/groq/openai/v1/chat/completions`;
+
+  const res = await fetch(groqUrl, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -162,7 +171,7 @@ async function callGroq(
   });
   if (!res.ok) {
     const errText = await res.text();
-    throw new Error(`Groq failed (${res.status}): ${errText}`);
+    throw new Error(`Groq (via AI Gateway) failed (${res.status}): ${errText}`);
   }
   const data: any = await res.json();
   return data.choices?.[0]?.message?.content || '';
@@ -175,14 +184,17 @@ export async function handleApiRequest(request: Request, env: Env): Promise<Resp
     return new Response(null, { status: 204, headers: CORS_HEADERS });
   }
 
-  const geminiKey = env.GEMINI_API_KEY || '';
-  const groqKey = env.GROQ_API_KEY || '';
+  const geminiKey = (env.GEMINI_API_KEY || '').trim();
+  const groqKey = (env.GROQ_API_KEY || '').trim();
 
   // GET /api/health
   if (url.pathname === '/api/health' && request.method === 'GET') {
     return jsonResponse({
-      gemini: Boolean(geminiKey && geminiKey.trim() && geminiKey !== 'MY_GEMINI_API_KEY'),
-      groq: Boolean(groqKey && groqKey.trim()),
+      gemini: Boolean(geminiKey && geminiKey !== 'MY_GEMINI_API_KEY'),
+      groq: Boolean(groqKey),
+      gatewayConfigured: Boolean(
+        CF_ACCOUNT_ID !== 'YOUR_ACCOUNT_ID' && CF_GATEWAY_ID !== 'YOUR_GATEWAY_ID'
+      ),
       status: 'ok',
     });
   }
@@ -200,6 +212,13 @@ export async function handleApiRequest(request: Request, env: Env): Promise<Resp
     if (!notes || typeof notes !== 'string' || !notes.trim()) {
       return jsonResponse({ error: 'Notes text is required to generate study materials.' }, 400);
     }
+
+    // ✂️ Note truncation — 28-page PDFs ke liye
+    const MAX_NOTES_LENGTH = 8000;
+    const truncatedNotes =
+      notes.length > MAX_NOTES_LENGTH
+        ? notes.slice(0, MAX_NOTES_LENGTH) + '\n\n[... notes truncated for length ...]'
+        : notes;
 
     const isUrdu = language === 'Roman Urdu';
     const systemPrompt = `You are Notes2Quiz, an expert academic tutor for university students in Pakistan.
@@ -226,12 +245,15 @@ Respond with valid JSON matching this schema:
   "activeRecall": [{ "question": "...", "answer": "..." }]
 }`;
 
-    const userPrompt = `Study Notes:\n"""\n${notes}\n"""\nGenerate the study pack JSON now.`;
+    const userPrompt = `Study Notes:\n"""\n${truncatedNotes}\n"""\nGenerate the study pack JSON now.`;
 
     let generatedJsonStr = '';
     let fallbackShifted = false;
+    let geminiError = '';
+    let groqError = '';
 
-    if (geminiKey && geminiKey.trim() && geminiKey !== 'MY_GEMINI_API_KEY') {
+    // 1. Try Gemini (gemini-3.8-flash)
+    if (geminiKey && geminiKey !== 'MY_GEMINI_API_KEY') {
       try {
         const ai = new GoogleGenAI({ apiKey: geminiKey });
         const response = await ai.models.generateContent({
@@ -240,12 +262,14 @@ Respond with valid JSON matching this schema:
           config: { responseMimeType: 'application/json' },
         });
         generatedJsonStr = response.text || '';
-      } catch (geminiErr) {
-        console.warn('Gemini generate failed, attempting Groq fallback:', geminiErr);
+      } catch (geminiErr: any) {
+        geminiError = geminiErr?.message || String(geminiErr);
+        console.warn('[GEMINI_ERROR]', geminiError);
       }
     }
 
-    if (!generatedJsonStr && groqKey && groqKey.trim()) {
+    // 2. Try Groq fallback (via AI Gateway)
+    if (!generatedJsonStr && groqKey) {
       try {
         generatedJsonStr = await callGroq(
           groqKey,
@@ -256,14 +280,18 @@ Respond with valid JSON matching this schema:
           true
         );
         fallbackShifted = true;
-      } catch (groqErr) {
-        console.error('Groq generate failed:', groqErr);
+      } catch (groqErr: any) {
+        groqError = groqErr?.message || String(groqErr);
+        console.error('[GROQ_ERROR]', groqError);
       }
     }
 
     if (!generatedJsonStr) {
       return jsonResponse(
-        { error: 'All AI models are currently busy. Please try again in a few moments.' },
+        {
+          error: 'All AI models are currently busy. Please try again in a few moments.',
+          _diagnostic: { geminiError, groqError },
+        },
         503
       );
     }
@@ -316,8 +344,11 @@ Answer the student's question directly, accurately, and concisely.`;
 
     let replyText = '';
     let fallbackShifted = false;
+    let geminiError = '';
+    let groqError = '';
 
-    if (geminiKey && geminiKey.trim() && geminiKey !== 'MY_GEMINI_API_KEY') {
+    // 1. Try Gemini
+    if (geminiKey && geminiKey !== 'MY_GEMINI_API_KEY') {
       try {
         const ai = new GoogleGenAI({ apiKey: geminiKey });
         const contents = [
@@ -328,17 +359,19 @@ Answer the student's question directly, accurately, and concisely.`;
           { role: 'user', parts: [{ text: userMessage }] },
         ];
         const response = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
+          model: 'gemini-3.8-flash',
           contents,
           config: { systemInstruction },
         });
         replyText = response.text || '';
-      } catch (geminiErr) {
-        console.warn('Gemini chat failed, trying Groq fallback:', geminiErr);
+      } catch (geminiErr: any) {
+        geminiError = geminiErr?.message || String(geminiErr);
+        console.warn('[GEMINI_CHAT_ERROR]', geminiError);
       }
     }
 
-    if (!replyText && groqKey && groqKey.trim()) {
+    // 2. Try Groq fallback
+    if (!replyText && groqKey) {
       try {
         const groqMessages = [
           { role: 'system', content: systemInstruction },
@@ -347,14 +380,18 @@ Answer the student's question directly, accurately, and concisely.`;
         ];
         replyText = await callGroq(groqKey, groqMessages, false);
         fallbackShifted = true;
-      } catch (groqErr) {
-        console.error('Groq chat failed:', groqErr);
+      } catch (groqErr: any) {
+        groqError = groqErr?.message || String(groqErr);
+        console.error('[GROQ_CHAT_ERROR]', groqError);
       }
     }
 
     if (!replyText) {
       return jsonResponse(
-        { error: 'All AI models are currently busy. Please try again in a few moments.' },
+        {
+          error: 'All AI models are currently busy. Please try again in a few moments.',
+          _diagnostic: { geminiError, groqError },
+        },
         503
       );
     }
