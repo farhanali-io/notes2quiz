@@ -6,8 +6,6 @@ import { DownloadBar } from './components/DownloadBar';
 import { CameraOverlay } from './components/CameraOverlay';
 import { WarningToast } from './components/WarningToast';
 import {
-  MOCK_STUDY_PACK_EN,
-  MOCK_STUDY_PACK_UR,
   SAMPLE_NOTES,
   StudyPackData,
 } from './data/mockPacks';
@@ -41,10 +39,10 @@ export default function App() {
     'mcqs',
   ]);
 
-  // Active study pack generated
+  // Active study pack generated via real API
   const [studyPack, setStudyPack] = useState<StudyPackData | null>(null);
 
-  // Dedicated conversation history for follow-up Q&A (Bug 3)
+  // Dedicated conversation history for follow-up Q&A
   const [conversationTurns, setConversationTurns] = useState<ConversationTurn[]>([]);
 
   // UI overlays & feedback
@@ -119,7 +117,7 @@ export default function App() {
     setStep(1);
   };
 
-  // User uploads document file (.pdf, .docx, .txt, .md) - BUG 1
+  // User uploads document file (.pdf, .docx, .txt, .md)
   const handleFileUpload = async (file: File) => {
     try {
       setIsParsingFile(true);
@@ -260,8 +258,8 @@ export default function App() {
     }
   };
 
-  // Step 4 -> 5: Generate Study Pack
-  const handleGeneratePack = () => {
+  // Step 4 -> 5: Real fetch call to /api/generate
+  const handleGeneratePack = async () => {
     setStep(4);
 
     const thinkingMsgId = `thinking-${Date.now()}`;
@@ -284,11 +282,29 @@ export default function App() {
 
     setMessages((prev) => [...prev, userMsg, thinkingMsg]);
 
-    // Simulate AI generation pipeline (TODO: Replace with actual Gemini backend endpoint)
-    setTimeout(() => {
-      const generatedPack =
-        selectedLanguage === 'Roman Urdu' ? MOCK_STUDY_PACK_UR : MOCK_STUDY_PACK_EN;
+    try {
+      const response = await fetch('/api/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          notes: rawNotes,
+          examDate: examDate || undefined,
+          language: selectedLanguage,
+          selectedFeatures: selectedFeatures,
+        }),
+      });
 
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || `Server responded with status ${response.status}`);
+      }
+
+      const generatedPack: any = await response.json();
+      if (generatedPack._fallbackShifted) {
+        setIsFallbackActive(true);
+      }
       setStudyPack(generatedPack);
 
       setMessages((prev) => {
@@ -307,53 +323,26 @@ export default function App() {
       // Clear earlier turns so follow-up conversation begins fresh with notes context
       setConversationTurns([]);
       setStep(5);
-    }, 2400);
+    } catch (err: any) {
+      console.error('Failed to generate study pack:', err);
+      setMessages((prev) => {
+        const filtered = prev.filter((m) => m.id !== thinkingMsgId);
+        return [
+          ...filtered,
+          {
+            id: `err-${Date.now()}`,
+            sender: 'assistant',
+            text: `⚠️ Could not generate study pack: ${err.message || 'Network error'}. Please try again.`,
+            timestamp: 'Just now',
+          },
+        ];
+      });
+      showAppToast(err.message || 'Failed to generate study pack. Please try again.');
+      setStep(3); // return to feature selection
+    }
   };
 
-  /**
-   * Generates a contextually accurate answer for follow-up questions
-   * based on the user's specific query and study notes.
-   */
-  const generateFollowupResponse = (query: string, history: ConversationTurn[]) => {
-    const q = query.toLowerCase();
-    const isUrdu = selectedLanguage === 'Roman Urdu';
-
-    if (q.includes('detail') || q.includes('more') || q.includes('explain') || q.includes('elaborate')) {
-      if (isUrdu) {
-        return `Tafseeli wazahat: Cell cycle ko control karne ke liye teen ahem checkpoints hotay hain: G1/S, G2/M, aur Spindle Assembly Checkpoint (SAC). Jab tak cell verify na kar le ke DNA ki replication bilkul theek hui hai aur saari spindle fibers chromatids ke kinetochores par jud chuki hain, cell aglay phase mein enter nahi hota. Yeh regulation cancer aur tumors se bachane ke liye zaroori hai.`;
-      }
-      return `Here is a detailed breakdown: The cell cycle is governed by Cyclin-Dependent Kinases (CDKs) bound to regulatory Cyclins. At the G1/S restriction point, p53 monitors DNA integrity via ATM/ATR kinases. During Metaphase, the Spindle Assembly Checkpoint (SAC) ensures bi-oriented tension across opposing kinetochores. Only when every chromosome is properly aligned does the APC/C complex degrade Securin, activating Separase to cleave cohesin rings and trigger Anaphase.`;
-    }
-
-    if (q.includes('p53') || q.includes('cancer') || q.includes('tumor') || q.includes('checkpoint')) {
-      if (isUrdu) {
-        return `p53 protein ko 'Guardian of the Genome' kaha jata hai. Agar DNA mein koi damage ho, to p53 cell cycle ko G1 phase mein rok kar repair enzymes ko bulata hai. Agar nuksan theek na ho sake, to yeh apoptosis (cell suicide) trigger karta hai taake abnormal cell divide na ho sake. Is gene ki mutation 50% se zyada cancers ki wajah banti hai.`;
-      }
-      return `p53 is known as the "guardian of the genome." When double-strand DNA breaks occur, p53 accumulates and acts as a transcription factor for p21, a CDK inhibitor that arrests the cell in G1. If DNA repair is impossible, p53 upregulates pro-apoptotic factors (like BAX and PUMA) to induce programmed cell death, preventing oncogenic mutations from propagating.`;
-    }
-
-    if (q.includes('cytokinesis') || q.includes('plant') || q.includes('animal') || q.includes('plate') || q.includes('furrow')) {
-      if (isUrdu) {
-        return `Cytokinesis ka bunyadi farq: Animal cells mein cell wall nahi hoti, is liye actin aur myosin microfilaments ka ring bahir se andar ki taraf pinch kar ke cleavage furrow banata hai. Plant cells mein rigid cellulose wall hoti hai, is liye Golgi apparatus se vesicles cell ke darmiyan jama ho kar andar se bahir 'cell plate' banate hain.`;
-      }
-      return `Cytokinesis differs fundamentally due to cell walls: Animal cells employ an actin-myosin II contractile ring that constricts the plasma membrane inward, forming a cleavage furrow (centripetal). Plant cells cannot pinch due to their rigid cellulose cell wall; instead, Golgi-derived secretory vesicles coalesce along the phragmoplast from the center outward, forming a pectin-rich cell plate (centrifugal).`;
-    }
-
-    if (q.includes('exam') || q.includes('mark') || q.includes('paper') || q.includes('tip') || q.includes('score')) {
-      if (isUrdu) {
-        return `University exam ke liye scoring tip: 7-mark ke long question mein hamesha chaaron marahil (Prophase, Metaphase, Anaphase, Telophase) ki neat pencil diagram zaroor banayein. Kinetochore, centrosome, aur metaphase plate ko wazeh label karein. Short questions mein G0 phase ki definition aur p53 ka role lazmi pucha jata hai.`;
-      }
-      return `University exam tip for 7-mark questions: Always draw neat diagrams for each of the four PMAT stages showing centriole migration and spindle attachment. Explicitly highlight key terms: "kinetochores", "equatorial plate alignment", "cohesin cleavage by separase", and "nuclear envelope reformation". Examiners award specific marks for clear labeling and distinguishing animal vs. plant cytokinesis.`;
-    }
-
-    // Default contextual answer directly answering what was typed
-    if (isUrdu) {
-      return `Aapke sawaal "${query}" ke mutabiq: Cell division mein accuracy sab se ahem hoti hai. Agar chromosome separation mein koi khata ho jaye to aneuploidy (ghalat chromosome tadaad) peda hoti hai. Mazeed tafseel ya kisi khaas marhalay (Prophase, Metaphase waghera) ke baray mein mazeed poochna chahein to batayein!`;
-    }
-    return `Addressing your question on "${query}": Based on your cell cycle notes, mitotic fidelity ensures that each daughter nucleus receives an exact chromosomal complement (2n). Checkpoint cascades guarantee that cellular resources, DNA replication fidelity, and microtubule tension are fully satisfied prior to each transitional phase. Would you like a simpler breakdown, a past-paper question, or a deep dive into a specific phase?`;
-  };
-
-  // Step 6: Follow-up question & answer with full conversation context (BUG 3)
+  // Step 6: Follow-up question & answer with real fetch to /api/chat
   const handleSendInput = async () => {
     const text = inputText.trim();
     if (!text) return;
@@ -371,98 +360,174 @@ export default function App() {
       timestamp: 'Just now',
     };
 
+    const thinkingFollowupId = `thinking-followup-${Date.now()}`;
+    const thinkingMsg: ChatMessage = {
+      id: thinkingFollowupId,
+      sender: 'assistant',
+      isThinking: true,
+    };
+
     setInputText('');
 
     // Append user turn to full conversation history
     const newUserTurn: ConversationTurn = { role: 'user', content: text };
     const updatedHistory = [...conversationTurns, newUserTurn];
-
-    // Guard: trim conversation history to last 6–8 messages to prevent losing focus
     const trimmedHistory = updatedHistory.slice(-8);
 
-    // Context format for backend / Gemini API integration:
-    // const payload = {
-    //   systemInstruction: `You are Notes2Quiz, an expert study assistant for university students. Notes: ${rawNotes}`,
-    //   messages: trimmedHistory, // role + content
-    // };
+    setMessages((prev) => [...prev, userMsg, thinkingMsg]);
 
-    // Generate responsive, contextual tutor response
-    const botResponse = generateFollowupResponse(text, trimmedHistory);
-
-    const newAssistantTurn: ConversationTurn = { role: 'assistant', content: botResponse };
-    setConversationTurns([...updatedHistory, newAssistantTurn]);
-
-    const botMsg: ChatMessage = {
-      id: `bot-followup-${Date.now()}`,
-      sender: 'assistant',
-      text: botResponse,
-      timestamp: 'Just now',
-      actionChips: [
-        {
-          label: 'Simplify',
-          onClick: () => handleContextAction('Simplify', text),
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        {
-          label: 'Make harder',
-          onClick: () => handleContextAction('Make harder', text),
-        },
-        {
-          label: 'Regenerate',
-          onClick: () => handleContextAction('Regenerate', text),
-        },
-      ],
-    };
+        body: JSON.stringify({
+          notes: rawNotes,
+          language: selectedLanguage,
+          messages: trimmedHistory,
+        }),
+      });
 
-    setMessages((prev) => [...prev, userMsg, botMsg]);
-    setStep(6);
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || `Server responded with status ${response.status}`);
+      }
+
+      const data = await response.json();
+      const botResponse = data.text || 'No response returned from tutor.';
+
+      const newAssistantTurn: ConversationTurn = { role: 'assistant', content: botResponse };
+      setConversationTurns([...updatedHistory, newAssistantTurn]);
+
+      const botMsg: ChatMessage = {
+        id: `bot-followup-${Date.now()}`,
+        sender: 'assistant',
+        text: botResponse,
+        timestamp: 'Just now',
+        actionChips: [
+          {
+            label: 'Simplify',
+            onClick: () => handleContextAction('Simplify', text),
+          },
+          {
+            label: 'Make harder',
+            onClick: () => handleContextAction('Make harder', text),
+          },
+          {
+            label: 'Regenerate',
+            onClick: () => handleContextAction('Regenerate', text),
+          },
+        ],
+      };
+
+      setMessages((prev) => {
+        const filtered = prev.filter((m) => m.id !== thinkingFollowupId);
+        return [...filtered, botMsg];
+      });
+      setStep(6);
+    } catch (err: any) {
+      console.error('Chat error:', err);
+      setMessages((prev) => {
+        const filtered = prev.filter((m) => m.id !== thinkingFollowupId);
+        return [
+          ...filtered,
+          {
+            id: `err-chat-${Date.now()}`,
+            sender: 'assistant',
+            text: `⚠️ Could not get an answer: ${err.message || 'Connection error'}. Please try asking again.`,
+            timestamp: 'Just now',
+          },
+        ];
+      });
+    }
   };
 
   // Contextual action chips handler ("Simplify", "Make harder", "Regenerate")
-  const handleContextAction = (action: 'Simplify' | 'Make harder' | 'Regenerate', lastTopic = '') => {
-    let responseText = '';
-    const isUrdu = selectedLanguage === 'Roman Urdu';
-
+  const handleContextAction = async (action: 'Simplify' | 'Make harder' | 'Regenerate', lastTopic = '') => {
+    let promptInstruction = '';
     if (action === 'Simplify') {
-      responseText = isUrdu
-        ? 'Asaan lafzon mein: Socho cell division ek factory ki quality control line hai. Har step par ek security guard khara hai. Agar blueprint (DNA) mein koi kharabi ho to guard foran alarm baja kar machine rok deta hai.'
-        : 'Simple analogy: Think of cell division as a quality control assembly line. Every station has a strict inspector. If a single page of the blueprint is torn, the inspector halts the conveyor belt until it is fixed or recycled.';
+      promptInstruction = `Please simplify your previous explanation about "${lastTopic || 'this concept'}" using everyday intuitive analogies and very clear language.`;
     } else if (action === 'Make harder') {
-      responseText = isUrdu
-        ? 'Advanced University Challenge: Explain the role of the Mad1-Mad2 tension sensor complex at kinetochores in suppressing Cdc20 activity during unattached metaphase alignment.'
-        : 'Advanced University Challenge: Detail how the Mad1-Mad2 complex at unattached kinetochores inhibits Cdc20, preventing premature activation of the Anaphase-Promoting Complex (APC/C) and cohesin degradation.';
+      promptInstruction = `Provide a challenging university-level exam question and clinical/biochemical depth regarding "${lastTopic || 'this concept'}".`;
     } else {
-      responseText = isUrdu
-        ? 'Refreshed Practice Question: Prophase aur Telophase aik doosre ke bilkul ulat (reverse) kyun kehlate hain? (Nuclear envelope aur chromatin packaging ke baray mein sochein).'
-        : 'Refreshed Practice Question: Why is Telophase known as the exact molecular reverse of Prophase? Notice how the nuclear lamina, nucleolus, and chromosome condensation undergo mirror-image transitions.';
+      promptInstruction = `Regenerate with a fresh high-yield practice question and detailed explanation regarding "${lastTopic || 'this concept'}".`;
     }
 
-    // Append to conversation history
-    const chipUserTurn: ConversationTurn = { role: 'user', content: `${action} explanation` };
-    const chipAssistantTurn: ConversationTurn = { role: 'assistant', content: responseText };
-    setConversationTurns((prev) => [...prev.slice(-7), chipUserTurn, chipAssistantTurn]);
-
-    const chipReply: ChatMessage = {
-      id: `bot-chip-${Date.now()}`,
+    const chipThinkingId = `chip-thinking-${Date.now()}`;
+    const thinkingMsg: ChatMessage = {
+      id: chipThinkingId,
       sender: 'assistant',
-      text: responseText,
-      timestamp: 'Just now',
-      actionChips: [
-        {
-          label: 'Simplify',
-          onClick: () => handleContextAction('Simplify', lastTopic),
-        },
-        {
-          label: 'Make harder',
-          onClick: () => handleContextAction('Make harder', lastTopic),
-        },
-        {
-          label: 'Regenerate',
-          onClick: () => handleContextAction('Regenerate', lastTopic),
-        },
-      ],
+      isThinking: true,
     };
 
-    setMessages((prev) => [...prev, chipReply]);
+    setMessages((prev) => [...prev, thinkingMsg]);
+
+    const chipUserTurn: ConversationTurn = { role: 'user', content: promptInstruction };
+    const updatedHistory = [...conversationTurns, chipUserTurn];
+    const trimmedHistory = updatedHistory.slice(-8);
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          notes: rawNotes,
+          language: selectedLanguage,
+          messages: trimmedHistory,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get updated answer');
+      }
+
+      const data = await response.json();
+      const responseText = data.text;
+
+      const chipAssistantTurn: ConversationTurn = { role: 'assistant', content: responseText };
+      setConversationTurns([...updatedHistory, chipAssistantTurn]);
+
+      const chipReply: ChatMessage = {
+        id: `bot-chip-${Date.now()}`,
+        sender: 'assistant',
+        text: responseText,
+        timestamp: 'Just now',
+        actionChips: [
+          {
+            label: 'Simplify',
+            onClick: () => handleContextAction('Simplify', lastTopic),
+          },
+          {
+            label: 'Make harder',
+            onClick: () => handleContextAction('Make harder', lastTopic),
+          },
+          {
+            label: 'Regenerate',
+            onClick: () => handleContextAction('Regenerate', lastTopic),
+          },
+        ],
+      };
+
+      setMessages((prev) => {
+        const filtered = prev.filter((m) => m.id !== chipThinkingId);
+        return [...filtered, chipReply];
+      });
+    } catch (err: any) {
+      console.error('Action chip error:', err);
+      setMessages((prev) => {
+        const filtered = prev.filter((m) => m.id !== chipThinkingId);
+        return [
+          ...filtered,
+          {
+            id: `err-chip-${Date.now()}`,
+            sender: 'assistant',
+            text: `⚠️ Could not process "${action}": ${err.message || 'Connection error'}.`,
+            timestamp: 'Just now',
+          },
+        ];
+      });
+    }
   };
 
   // Camera capture simulation
@@ -483,7 +548,7 @@ export default function App() {
   } else if (step === 3) {
     disabledReason = 'Tap one or more study pack options above and click Generate';
   } else if (step === 4) {
-    disabledReason = 'Generating your personalized study pack…';
+    disabledReason = 'Generating your personalized study pack via AI…';
   }
 
   return (
