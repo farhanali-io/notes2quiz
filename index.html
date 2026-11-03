@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      (function() {
+        try {
+          var _rawFetch = window.fetch;
+          var hasSetter = false;
+          try {
+            var desc = Object.getOwnPropertyDescriptor(window, 'fetch') ||
+                       (window.Window && Object.getOwnPropertyDescriptor(window.Window.prototype, 'fetch'));
+            if (desc && desc.set) {
+              hasSetter = true;
+            }
+          } catch(e) {}
+
+          if (!hasSetter) {
+            Object.defineProperty(window, 'fetch', {
+              get: function() {
+                return _rawFetch;
+              },
+              set: function(val) {
+                _rawFetch = val;
+              },
+              configurable: true,
+              enumerable: true
+            });
+            try {
+              if (window.Window && window.Window.prototype) {
+                Object.defineProperty(window.Window.prototype, 'fetch', {
+                  get: function() {
+                    return _rawFetch;
+                  },
+                  set: function(val) {
+                    _rawFetch = val;
+                  },
+                  configurable: true,
+                  enumerable: true
+                });
+              }
+            } catch(e2) {}
+          }
+        } catch (e3) {}
+      })();
+    </script>
+    <title>Notes2Quiz — AI Study Tutor for University Students</title>
+    <meta name="description" content="Turn your handwritten or typed study notes into interactive quizzes, flashcards, summaries, and exam packs." />
+    <meta property="og:title" content="Notes2Quiz — AI Study Tutor for University Students" />
+    <meta property="og:description" content="Turn your handwritten or typed study notes into interactive quizzes, flashcards, summaries, and exam packs." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+
