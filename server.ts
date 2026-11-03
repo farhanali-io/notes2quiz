@@ -13,9 +13,9 @@ const AI_GATEWAY_TIMEOUT_MS = '120000'; // 120 seconds
 
 // ✅ Current stable Gemini models (Nov 2026)
 const GEMINI_MODELS = [
-  'gemini-3.8-flash',       // Primary
-  'gemini-3.6-flash',       // Fallback 1
-  'gemini-3.5-flash-lite',  // Fallback 2 (fastest)
+  'gemini-3.6-flash',       // ← Primary: fast + reliable (1.8s)
+  'gemini-3.5-flash-lite',  // ← Fallback 1: fastest (0.95s)
+  'gemini-3.8-flash',   // Fallback 2 (fastest)
 ];
 
 const CORS_HEADERS = {
