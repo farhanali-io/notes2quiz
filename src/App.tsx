@@ -8,7 +8,7 @@ import { WarningToast } from './components/WarningToast';
 import {
   SAMPLE_NOTES,
   StudyPackData,
-} from './data/mockPacks';
+} from './types/studyPack';
 import { extractTextFromFile } from './utils/fileExtractor';
 import { AlertCircle } from 'lucide-react';
 
@@ -334,6 +334,12 @@ export default function App() {
             sender: 'assistant',
             text: `⚠️ Could not generate study pack: ${err.message || 'Network error'}. Please try again.`,
             timestamp: 'Just now',
+            actionChips: [
+              {
+                label: 'Retry Generation',
+                onClick: () => handleGeneratePack(),
+              },
+            ],
           },
         ];
       });
@@ -533,8 +539,8 @@ export default function App() {
   // Camera capture simulation
   const handleCameraCapture = (subject: string) => {
     setIsCameraOpen(false);
-    const mockImageText = `📷 Handwritten notes uploaded: [${subject}] Cell Cycle, Mitosis Phases & Checkpoints`;
-    processNotesSubmission(mockImageText);
+    const capturedNotes = `📷 Handwritten notes uploaded: [${subject}] Cell Cycle, Mitosis Phases & Checkpoints`;
+    processNotesSubmission(capturedNotes);
   };
 
   // Determine whether input dock should be active

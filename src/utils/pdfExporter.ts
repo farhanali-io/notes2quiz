@@ -1,4 +1,4 @@
-import { StudyPackData } from '../data/mockPacks';
+import { StudyPackData } from '../types/studyPack';
 
 interface PDFExportOptions {
   studyPack: StudyPackData;

@@ -6,7 +6,7 @@ import {
   Share2,
   Download,
 } from 'lucide-react';
-import { StudyPackData } from '../data/mockPacks';
+import { StudyPackData } from '../types/studyPack';
 import { exportToPDF } from '../utils/pdfExporter';
 import { exportToDOCX } from '../utils/docxExporter';
 

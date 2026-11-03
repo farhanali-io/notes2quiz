@@ -10,7 +10,7 @@ import {
   EyeOff,
   Check,
 } from 'lucide-react';
-import { FEATURE_CONFIGS } from '../data/mockPacks';
+import { FEATURE_CONFIGS } from '../types/studyPack';
 
 interface FeatureGridProps {
   selectedFeatures: string[];

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MCQItem } from '../data/mockPacks';
+import { MCQItem } from '../types/studyPack';
 import { CheckCircle2, XCircle, HelpCircle } from 'lucide-react';
 
 interface MCQCardProps {

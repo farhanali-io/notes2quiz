@@ -2,5 +2,7 @@
   "name": "Notes2Quiz",
   "description": "AI study chatbot for university students to turn study notes into quizzes, flashcards, summaries, and exam prep packs.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }

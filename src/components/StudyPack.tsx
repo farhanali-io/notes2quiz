@@ -4,7 +4,7 @@ import { MCQCard } from './MCQCard';
 import { Flashcard } from './Flashcard';
 import { RevisionPlan } from './RevisionPlan';
 import { ActiveRecall } from './ActiveRecall';
-import { StudyPackData } from '../data/mockPacks';
+import { StudyPackData } from '../types/studyPack';
 import { Sparkles, BookOpen, FileQuestion, Clock, Lightbulb } from 'lucide-react';
 
 interface StudyPackProps {

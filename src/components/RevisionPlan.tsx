@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { RevisionDay } from '../data/mockPacks';
+import { RevisionDay } from '../types/studyPack';
 import { Calendar, CheckCircle, Clock } from 'lucide-react';
 
 interface RevisionPlanProps {

@@ -1,5 +1,4 @@
-import React from 'react';
-import { Bot, RotateCcw, ShieldAlert, Sparkles } from 'lucide-react';
+import { Bot, RotateCcw } from 'lucide-react';
 
 interface HeaderProps {
   onResetChat: () => void;
@@ -38,23 +37,8 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Right side controls: Hidden dev fallback tester + New Chat button */}
+        {/* Right side controls: New Chat button */}
         <div className="flex items-center gap-2">
-          {/* Dev button to test fallback warning toast as required by checklist */}
-          <button
-            type="button"
-            onClick={onToggleFallback}
-            aria-label="Simulate fallback toggle"
-            title="Simulate fallback AI switch (test banner)"
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] transition-all cursor-pointer border ${
-              isFallbackActive
-                ? 'bg-[#2A1F00] text-[#FFD166] border-[#FFD166]'
-                : 'bg-transparent text-[#A1A1A1]/60 hover:text-[#A1A1A1] border-transparent hover:border-[#1F1F1F]'
-            }`}
-          >
-            <ShieldAlert className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Simulate fallback</span>
-          </button>
 
           {/* New Chat pill button */}
           <button

@@ -3,7 +3,7 @@ import { Bubble } from './Bubble';
 import { ThinkingDots } from './ThinkingDots';
 import { FeatureGrid } from './FeatureGrid';
 import { StudyPack } from './StudyPack';
-import { StudyPackData } from '../data/mockPacks';
+import { StudyPackData } from '../types/studyPack';
 import { Calendar, SkipForward, ArrowRight, Sparkles } from 'lucide-react';
 
 export interface ChatMessage {

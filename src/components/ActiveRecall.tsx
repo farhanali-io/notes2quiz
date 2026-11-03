@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ActiveRecallItem } from '../data/mockPacks';
+import { ActiveRecallItem } from '../types/studyPack';
 import { ChevronDown, ChevronUp, Eye, Lightbulb } from 'lucide-react';
 
 interface ActiveRecallProps {

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FlashcardItem } from '../data/mockPacks';
+import { FlashcardItem } from '../types/studyPack';
 import { RotateCw, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react';
 
 interface FlashcardProps {
