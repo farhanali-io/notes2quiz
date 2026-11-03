@@ -154,7 +154,7 @@ async function callGroq(
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: 'llama-3.3-70b-versatile',
+      model: 'llama-3.1-8b-instant',
       messages,
       ...(jsonMode ? { response_format: { type: 'json_object' } } : {}),
       temperature: 0.5,
@@ -235,7 +235,7 @@ Respond with valid JSON matching this schema:
       try {
         const ai = new GoogleGenAI({ apiKey: geminiKey });
         const response = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
+          model: 'gemini-2.0-flash',
           contents: [{ role: 'user', parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] }],
           config: { responseMimeType: 'application/json' },
         });
