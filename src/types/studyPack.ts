@@ -10,6 +10,10 @@ export interface MCQItem {
   correctIndex: number;
   correctAnswer?: string;
   explanation: string;
+  theme?: string;
+  difficulty?: 'Low' | 'Medium' | 'High';
+  mnemonic?: string;
+  notes?: string;
 }
 
 export interface FlashcardItem {
@@ -61,67 +65,174 @@ export interface StudyPackData {
   };
   activeRecall: ActiveRecallItem[];
   _fallbackShifted?: boolean;
+  sessionTitle?: string;
+  extractedThemes?: string[];
+  pageCount?: number;
 }
 
-export const SAMPLE_NOTES = `Cell Division & Mitosis Lecture Notes:
-- Cell cycle consists of Interphase (G1, S, G2 phases) and M-Phase (Mitosis + Cytokinesis).
-- In Interphase, G1 is cellular growth and protein synthesis; S-phase is DNA replication (chromosome count remains 2n, DNA content doubles from 2C to 4C); G2 prepares cell for mitosis.
-- Mitosis has 4 main stages:
-  1. Prophase: Chromatin condenses into visible chromosomes, nucleolus disappears, mitotic spindle forms from centrioles, nuclear envelope breaks down.
-  2. Metaphase: Chromosomes align along the metaphase plate (equator). Spindle fibers attach to kinetochores of sister chromatids.
-  3. Anaphase: Centromeres split; sister chromatids are pulled toward opposite poles by shortening microtubules.
-  4. Telophase: Chromatids decondense back into chromatin, nuclear membranes reform around daughter nuclei, spindle dissolves.
-- Cytokinesis: Cleavage furrow in animal cells (actin-myosin ring); Cell plate formation in plant cells (Golgi vesicles fuse).
-- Significance: Growth, tissue repair, asexual reproduction. Uncontrolled mitosis leads to tumors and cancer due to faulty checkpoints (p53 / cyclins / CDKs).`;
+export interface StudySession {
+  id: string;
+  title: string;
+  category: 'today' | 'previous' | 'courses';
+  course?: string;
+  timestamp: string;
+  questionCount?: number;
+  active?: boolean;
+}
+
+export const DEFAULT_SESSIONS: StudySession[] = [
+  {
+    id: 'session-bio-301',
+    title: 'BIO 301 - Cellular Respiration & ATP',
+    category: 'today',
+    course: 'Biology 101 & 301',
+    timestamp: '10:24 AM',
+    questionCount: 15,
+    active: true,
+  },
+  {
+    id: 'session-econ-104',
+    title: 'ECON 104 - Game Theory & Nash Equil',
+    category: 'today',
+    course: 'Economics & Stats',
+    timestamp: 'Yesterday',
+    questionCount: 12,
+  },
+  {
+    id: 'session-cs-189',
+    title: 'CS 189 - Gradient Descent & Loss',
+    category: 'previous',
+    course: 'Computer Science',
+    timestamp: '3 days ago',
+    questionCount: 18,
+  },
+  {
+    id: 'session-chem-210',
+    title: 'CHEM 210 - Organic Synthesis Paths',
+    category: 'previous',
+    course: 'Chemistry',
+    timestamp: '5 days ago',
+    questionCount: 10,
+  },
+  {
+    id: 'session-phil-101',
+    title: 'PHIL 101 - Ethics Discussion Prep',
+    category: 'previous',
+    course: 'Philosophy',
+    timestamp: '6 days ago',
+    questionCount: 8,
+  },
+];
+
+export const COURSE_FOLDERS = [
+  { id: 'c1', name: 'Biology 101 & 301', count: 4 },
+  { id: 'c2', name: 'Economics & Stats', count: 2 },
+  { id: 'c3', name: 'Computer Science', count: 5 },
+];
+
+export const SAMPLE_NOTES = `BIO 301: Cellular Respiration & Oxidative Phosphorylation
+Key Concepts:
+- Glycolysis occurs in cytosol: 1 Glucose (6C) -> 2 Pyruvate (3C) + 2 net ATP (substrate-level phosphorylation) + 2 NADH.
+- Pyruvate Decarboxylation: Pyruvate moves to mitochondrial matrix via pyruvate translocase; converted to Acetyl-CoA by Pyruvate Dehydrogenase Complex (PDH), yielding 1 NADH and 1 CO2 per pyruvate (2 NADH per glucose).
+- Citric Acid Cycle (Krebs Cycle): Acetyl-CoA (2C) condenses with Oxaloacetate (4C) to form Citrate (6C). Net per glucose (2 turns): 6 NADH, 2 FADH2, 2 GTP/ATP, 4 CO2.
+- Electron Transport Chain (ETC): Inner mitochondrial membrane. Complex I (NADH dehydrogenase), Complex II (Succinate dehydrogenase), Complex III (Cytochrome bc1), Complex IV (Cytochrome c oxidase).
+- Proton Gradient: Protons pumped from matrix to intermembrane space by Complexes I, III, and IV.
+- ATP Synthase: F0/F1 complex uses proton motive force (chemiosmosis) to generate ~28-30 ATP per glucose.
+- Clinical correlation: Cyanide & Carbon Monoxide inhibit Complex IV (blocks respiration); Oligomycin inhibits F0 subunit of ATP synthase; 2,4-Dinitrophenol (DNP) is a chemical uncoupler that dissipates proton gradient as heat.`;
+
+export const SAMPLE_CS_NOTES = `CS 201: Data Structures & Algorithms (Trees, Graphs, & Asymptotics)
+Key University Topics:
+- Binary Search Tree (BST): In-order traversal produces sorted elements. Search, insertion, and deletion are O(h) where h is tree height; O(log n) for balanced BST (AVL, Red-Black) and O(n) worst-case skewed tree.
+- Graph Traversals:
+  * Breadth-First Search (BFS): Uses queue (FIFO). Computes shortest path on unweighted graphs. Time: O(V + E), Space: O(V).
+  * Depth-First Search (DFS): Uses stack or recursion (LIFO). Used for topological sorting, cycle detection, and strongly connected components. Time: O(V + E).
+- Shortest Path Algorithms:
+  * Dijkstra's Algorithm: Greedy approach for non-negative edge weights using Min-Priority Queue. Time: O((V + E) log V).
+  * Bellman-Ford: Handles negative edge weights and detects negative cycles. Time: O(V * E).
+- Dynamic Programming vs Divide & Conquer:
+  * DP requires Overlapping Subproblems and Optimal Substructure (Memoization vs Tabulation).
+  * Example: 0/1 Knapsack problem solved in O(n*W) pseudo-polynomial time.`;
+
+export const SAMPLE_PAK_NOTES = `PAK 101: Pakistan Constitutional & Independence History
+Key Academic Milestones:
+- 14 Points of Quaid-e-Azam (March 1929): Response to Nehru Report demanding federal system with residual powers to provinces, 1/3rd Muslim representation in central legislature, and separation of Sindh from Bombay.
+- Lahore Resolution (23 March 1940): Presented by A.K. Fazlul Huq at Minto Park; declared that geographically contiguous units be demarcated into independent Muslim-majority sovereign states.
+- Objective Resolution (12 March 1949): Moved by Liaquat Ali Khan; established sovereignty belongs to Allah Almighty alone, with delegated authority exercised by representatives through Islamic democratic principles.
+- 1973 Constitution: Enacted 14 August 1973 under Z.A. Bhutto; parliamentary form of government, bicameral legislature (Senate and National Assembly), Fundamental Rights guaranteed, and declaration of Islam as state religion.
+- 18th Constitutional Amendment (2010): Abolished concurrent list, devolved legislative and executive powers to provinces, reformed Article 58(2)(b) removing presidential discretion to dissolve assemblies.`;
 
 export const FEATURE_CONFIGS = [
   {
-    id: "full_package",
-    name: "Full Study Package",
-    description: "Everything in one comprehensive pack",
-    icon: "Layers",
+    id: 'full_package',
+    name: 'Full Study Package',
+    description: 'Comprehensive master pack with all materials bundled',
+    badge: '15 Questions • Full Pack',
+    duration: '35 Mins',
+    icon: 'Layers',
+    color: '#6366F1',
   },
   {
-    id: "simplified_notes",
-    name: "Simplified Notes",
-    description: "Easy-to-read rewrite with core terms",
-    icon: "FileText",
-  },
-  {
-    id: "key_points",
-    name: "Key Points",
-    description: "High-yield bulleted summary",
-    icon: "ListChecks",
-  },
-  {
-    id: "mcqs",
-    name: "MCQs",
-    description: "Practice questions with interactive answers",
-    icon: "CheckCircle2",
-  },
-  {
-    id: "flashcards",
-    name: "Flashcards",
-    description: "Click-to-flip question and answer pairs",
-    icon: "Sparkles",
-  },
-  {
-    id: "exam_notes",
-    name: "Exam Notes",
-    description: "Short + Long questions + MCQs breakdown",
-    icon: "GraduationCap",
+    id: 'exam_notes',
+    name: 'Exam Notes (Shorts + Longs + MCQs)',
+    description: 'Structured university exam format with mark weights & outlines',
+    badge: '★ Best for exams',
+    duration: '25 Mins',
+    icon: 'GraduationCap',
+    color: '#14AC8C',
     isFlagship: true,
   },
   {
-    id: "revision_plan",
-    name: "Personal Revision Plan",
-    description: "Day-by-day schedule based on exam date",
-    icon: "Calendar",
+    id: 'simplified_notes',
+    name: 'Simplified Notes',
+    description: 'Plain-language explanations, analogies & core concepts',
+    badge: 'High Clarity',
+    duration: '10 Mins',
+    icon: 'FileText',
+    color: '#344CE4',
   },
   {
-    id: "active_recall",
-    name: "Active Recall Mode",
-    description: "Questions first, answers hidden behind reveal",
-    icon: "EyeOff",
+    id: 'key_points',
+    name: 'Key Points',
+    description: 'High-yield bullet points and critical formulas',
+    badge: 'High Yield',
+    duration: '5 Mins',
+    icon: 'ListChecks',
+    color: '#10B981',
+  },
+  {
+    id: 'mcqs',
+    name: 'MCQs',
+    description: 'High-distractor questions with instant rationale & keys',
+    badge: '15 Questions',
+    duration: '20 Mins',
+    icon: 'CheckCircle2',
+    color: '#8B5CF6',
+  },
+  {
+    id: 'flashcards',
+    name: 'Flashcards',
+    description: '3D Leitner spaced repetition flashcard deck',
+    badge: '20 Cards',
+    duration: 'Spaced',
+    icon: 'Sparkles',
+    color: '#EC4899',
+  },
+  {
+    id: 'revision_plan',
+    name: 'Revision Plan',
+    description: 'Day-by-day scheduled roadmap leading to exam date',
+    badge: 'Personalized',
+    duration: 'Roadmap',
+    icon: 'Calendar',
+    color: '#F59E0B',
+  },
+  {
+    id: 'active_recall',
+    name: 'Active Recall Mode',
+    description: 'Fill-in-the-blank & self-testing diagnostic questions',
+    badge: '10 Problems',
+    duration: 'Deep Dive',
+    icon: 'EyeOff',
+    color: '#06B6D4',
   },
 ];

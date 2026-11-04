@@ -1,10 +1,10 @@
 import React, { useRef, useEffect } from 'react';
-import { Bubble } from './Bubble';
+import { Bubble, FileAttachment } from './Bubble';
 import { ThinkingDots } from './ThinkingDots';
-import { FeatureGrid } from './FeatureGrid';
-import { StudyPack } from './StudyPack';
+import { StudyStrategyCard } from './StudyStrategyCard';
+import { StudyPackViewer } from './StudyPackViewer';
 import { StudyPackData } from '../types/studyPack';
-import { Calendar, SkipForward, ArrowRight, Sparkles } from 'lucide-react';
+import { Sparkles, BookOpen, Terminal, Scale } from 'lucide-react';
 
 export interface ChatMessage {
   id: string;
@@ -14,6 +14,7 @@ export interface ChatMessage {
   isThinking?: boolean;
   isStudyPack?: boolean;
   actionChips?: { label: string; onClick: () => void }[];
+  attachments?: FileAttachment[];
 }
 
 interface ChatThreadProps {
@@ -23,6 +24,9 @@ interface ChatThreadProps {
   selectedFeatures: string[];
   examDate: string;
   language: 'English' | 'Roman Urdu';
+  sessionTitle: string;
+  notesWordCount?: number;
+  extractedThemes?: string[];
   onExamDateChange: (date: string) => void;
   onSubmitExamDate: () => void;
   onSkipExamDate: () => void;
@@ -30,7 +34,10 @@ interface ChatThreadProps {
   onToggleFeature: (id: string) => void;
   onSelectAllFeatures: () => void;
   onGeneratePack: () => void;
-  onLoadSampleNotes: () => void;
+  onLoadSampleNotes: (sampleType?: 'bio' | 'cs' | 'pak') => void;
+  onStartTimedQuiz: () => void;
+  isGenerating?: boolean;
+  isNightMode?: boolean;
 }
 
 export const ChatThread: React.FC<ChatThreadProps> = ({
@@ -40,6 +47,9 @@ export const ChatThread: React.FC<ChatThreadProps> = ({
   selectedFeatures,
   examDate,
   language,
+  sessionTitle,
+  notesWordCount = 380,
+  extractedThemes,
   onExamDateChange,
   onSubmitExamDate,
   onSkipExamDate,
@@ -48,36 +58,46 @@ export const ChatThread: React.FC<ChatThreadProps> = ({
   onSelectAllFeatures,
   onGeneratePack,
   onLoadSampleNotes,
+  onStartTimedQuiz,
+  isGenerating = false,
+  isNightMode = true,
 }) => {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, step]);
+  }, [messages, step, isGenerating]);
+
+  const hasOnlyGreeting = messages.length === 1 && messages[0].sender === 'assistant';
 
   return (
-    <main className="flex-1 overflow-y-auto px-4 py-6 scroll-smooth">
-      <div className="max-w-[720px] mx-auto w-full space-y-4">
+    <main className="flex-1 overflow-y-auto px-3 sm:px-6 py-5 scroll-smooth">
+      <div className="max-w-[760px] mx-auto w-full space-y-5">
         {/* Render standard message history */}
         {messages.map((msg) => {
           if (msg.isThinking) {
             return (
-              <Bubble key={msg.id} sender="assistant">
-                <ThinkingDots />
+              <Bubble key={msg.id} sender="assistant" isNightMode={isNightMode}>
+                <div className="flex items-center gap-3">
+                  <ThinkingDots />
+                  <span className="text-[12px] text-indigo-400 font-medium">
+                    Generating academic study materials via Gemini 2.5…
+                  </span>
+                </div>
               </Bubble>
             );
           }
 
           if (msg.isStudyPack && studyPackData) {
             return (
-              <div key={msg.id} className="space-y-3 w-full">
-                <Bubble sender="assistant">
-                  Here is your generated study pack! Review each module below, practice the interactive questions, or export your pack anytime using the download bar below.
-                </Bubble>
-                <StudyPack
+              <div key={msg.id} className="space-y-4 w-full animate-in fade-in">
+                <StudyPackViewer
                   data={studyPackData}
                   selectedFeatures={selectedFeatures}
+                  sessionTitle={sessionTitle}
                   examDate={examDate}
+                  language={language}
+                  onStartTimedQuiz={onStartTimedQuiz}
                 />
               </div>
             );
@@ -89,121 +109,87 @@ export const ChatThread: React.FC<ChatThreadProps> = ({
               sender={msg.sender}
               timestamp={msg.timestamp}
               actionChips={msg.actionChips}
+              attachments={msg.attachments}
+              isNightMode={isNightMode}
             >
               {msg.text}
             </Bubble>
           );
         })}
 
-        {/* STEP 0: Optional quick sample note suggestion */}
-        {step === 0 && (
-          <div className="pt-2 pl-10">
-            <button
-              type="button"
-              onClick={onLoadSampleNotes}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#1F1F1F] hover:bg-[#282828] text-[#14AC8C] hover:text-[#17c29e] border border-[#14AC8C]/20 hover:border-[#14AC8C]/40 text-[12px] font-medium transition-all active:scale-95 cursor-pointer shadow-sm"
+        {/* STEP 0: Show quick sample starter buttons when only the greeting is present */}
+        {(step === 0 || hasOnlyGreeting) && (
+          <div className="pt-2 pl-11 space-y-2">
+            <span
+              className={`text-[11px] font-semibold uppercase tracking-wider block ${
+                isNightMode ? 'text-[#737A8C]' : 'text-slate-500'
+              }`}
             >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Load sample note: Cell Division & Mitosis</span>
-            </button>
-          </div>
-        )}
-
-        {/* STEP 1: Exam Date Prompt Actions */}
-        {step === 1 && (
-          <div className="pl-10 space-y-3 pt-1">
-            <div className="p-4 rounded-[14px] bg-[#141414] border border-[#1F1F1F] space-y-3 max-w-[420px]">
-              <label
-                htmlFor="exam-date-input"
-                className="block text-[11px] font-semibold uppercase tracking-wider text-[#A1A1A1]"
-              >
-                Set Exam Date (Optional)
-              </label>
-
-              <div className="flex items-center gap-2">
-                <div className="relative flex-1">
-                  <Calendar className="w-4 h-4 text-[#14AC8C] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                  <input
-                    id="exam-date-input"
-                    type="date"
-                    value={examDate}
-                    onChange={(e) => onExamDateChange(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 bg-[#1F1F1F] border border-[#2D2D2D] rounded-[8px] text-[14px] text-[#FCFCFC] focus:border-[#14AC8C] outline-none"
-                  />
-                </div>
-
-                <button
-                  type="button"
-                  onClick={onSubmitExamDate}
-                  disabled={!examDate}
-                  aria-label="Confirm exam date"
-                  className={`h-9 px-3 rounded-[8px] font-medium text-[13px] flex items-center gap-1.5 transition-all ${
-                    examDate
-                      ? 'bg-[#14AC8C] text-[#111111] hover:bg-[#129a7d] cursor-pointer'
-                      : 'bg-[#222222] text-[#666666] cursor-not-allowed'
-                  }`}
-                >
-                  <span>Set</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-
-              <div className="flex items-center justify-between pt-1 border-t border-[#1F1F1F]">
-                <span className="text-[12px] text-[#A1A1A1]">
-                  Don't have a date yet?
-                </span>
-                <button
-                  type="button"
-                  onClick={onSkipExamDate}
-                  className="px-3 py-1 rounded-full bg-[#1F1F1F] hover:bg-[#282828] text-[#FCFCFC] text-[12px] font-medium border border-[#2D2D2D] transition-colors flex items-center gap-1.5 cursor-pointer"
-                >
-                  <SkipForward className="w-3.5 h-3.5 text-[#A1A1A1]" />
-                  <span>Skip</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* STEP 2: Language Preference Actions */}
-        {step === 2 && (
-          <div className="pl-10 space-y-2 pt-1">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-[#A1A1A1] block">
-              Choose language
+              Or test with university course sample notes:
             </span>
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap gap-2">
               <button
                 type="button"
-                onClick={() => onSelectLanguage('English')}
-                className="flex-1 min-w-[140px] max-w-[200px] h-12 rounded-full bg-[#141414] hover:bg-[#1F1F1F] border border-[#1F1F1F] hover:border-[#14AC8C] text-[#FCFCFC] font-semibold text-[15px] flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer shadow-sm hover:shadow-[0_0_15px_-4px_rgba(20,172,140,0.3)]"
+                onClick={() => onLoadSampleNotes('bio')}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[11px] font-medium transition-all active:scale-95 cursor-pointer shadow-xs ${
+                  isNightMode
+                    ? 'bg-[#121626] hover:bg-[#181E32] text-indigo-300 hover:text-white border-indigo-500/30'
+                    : 'bg-white hover:bg-slate-100 text-indigo-700 border-indigo-200'
+                }`}
               >
-                <span>English</span>
+                <Sparkles className="w-3 h-3 text-emerald-500" />
+                <span>🧬 BIO 301 Cellular Respiration</span>
               </button>
 
               <button
                 type="button"
-                onClick={() => onSelectLanguage('Roman Urdu')}
-                className="flex-1 min-w-[140px] max-w-[200px] h-12 rounded-full bg-[#141414] hover:bg-[#1F1F1F] border border-[#1F1F1F] hover:border-[#14AC8C] text-[#FCFCFC] font-semibold text-[15px] flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer shadow-sm hover:shadow-[0_0_15px_-4px_rgba(20,172,140,0.3)]"
+                onClick={() => onLoadSampleNotes('cs')}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[11px] font-medium transition-all active:scale-95 cursor-pointer shadow-xs ${
+                  isNightMode
+                    ? 'bg-[#121626] hover:bg-[#181E32] text-indigo-300 hover:text-white border-indigo-500/30'
+                    : 'bg-white hover:bg-slate-100 text-indigo-700 border-indigo-200'
+                }`}
               >
-                <span>Roman Urdu</span>
+                <Terminal className="w-3 h-3 text-indigo-500" />
+                <span>💻 CS 201 Data Structures & Algorithms</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => onLoadSampleNotes('pak')}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[11px] font-medium transition-all active:scale-95 cursor-pointer shadow-xs ${
+                  isNightMode
+                    ? 'bg-[#121626] hover:bg-[#181E32] text-indigo-300 hover:text-white border-indigo-500/30'
+                    : 'bg-white hover:bg-slate-100 text-indigo-700 border-indigo-200'
+                }`}
+              >
+                <Scale className="w-3 h-3 text-amber-500" />
+                <span>🏛️ PAK 101 Pakistan Constitutional History</span>
               </button>
             </div>
           </div>
         )}
 
-        {/* STEP 3: Multi-select Feature Grid */}
-        {step === 3 && (
-          <div className="pl-10 pt-1">
-            <FeatureGrid
+        {/* STEP 1-3: Show Modern Selectable Study Options Card (What to create) */}
+        {(step === 1 || step === 2 || step === 3) && (
+          <div className="w-full pt-1">
+            <StudyStrategyCard
+              notesWordCount={notesWordCount}
+              extractedThemes={extractedThemes}
               selectedFeatures={selectedFeatures}
               onToggleFeature={onToggleFeature}
-              onSelectAll={onSelectAllFeatures}
+              onSelectAllFeatures={onSelectAllFeatures}
+              language={language}
+              onSelectLanguage={onSelectLanguage}
+              examDate={examDate}
+              onExamDateChange={onExamDateChange}
               onGenerate={onGeneratePack}
+              isGenerating={isGenerating}
             />
           </div>
         )}
 
-        <div ref={bottomRef} className="h-4" />
+        <div ref={bottomRef} className="h-6" />
       </div>
     </main>
   );
