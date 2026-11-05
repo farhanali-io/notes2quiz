@@ -1,10 +1,7 @@
 import React, { useState } from 'react';
 import {
-  Sparkles,
   ChevronLeft,
   ChevronRight,
-  CheckCircle2,
-  XCircle,
   Lightbulb,
   Brain,
   ChevronDown,
@@ -16,13 +13,8 @@ import {
   FileType,
   FileCode,
   GraduationCap,
-  Layers,
   BookOpen,
-  Calendar,
-  EyeOff,
-  Copy,
   Check,
-  CheckCircle,
 } from 'lucide-react';
 import { StudyPackData, MCQItem } from '../types/studyPack';
 import { Flashcard } from './Flashcard';
@@ -38,6 +30,7 @@ interface StudyPackViewerProps {
   examDate?: string;
   language: 'English' | 'Roman Urdu';
   onStartTimedQuiz: () => void;
+  isNightMode?: boolean;
 }
 
 export const StudyPackViewer: React.FC<StudyPackViewerProps> = ({
@@ -47,47 +40,52 @@ export const StudyPackViewer: React.FC<StudyPackViewerProps> = ({
   examDate,
   language,
   onStartTimedQuiz,
+  isNightMode = true,
 }) => {
   const isFull = selectedFeatures.includes('full_package');
   const shouldRender = (id: string) => isFull || selectedFeatures.includes(id);
 
-  // Active module tab
-  const [activeTab, setActiveTab] = useState<'mcqs' | 'exam_notes' | 'flashcards' | 'simplified' | 'key_points' | 'revision' | 'active_recall'>('mcqs');
+  const [activeTab, setActiveTab] = useState<
+    'mcqs' | 'exam_notes' | 'flashcards' | 'simplified' | 'key_points' | 'revision' | 'active_recall'
+  >('mcqs');
 
-  // Interactive MCQ Pagination State
   const [currentMcqIndex, setCurrentMcqIndex] = useState(0);
-  const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({ 0: 2 }); // default selection for Q1 as seen in mockup
+  const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
   const [isMnemonicOpen, setIsMnemonicOpen] = useState(true);
 
-  // Export feedback
   const [exportToast, setExportToast] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
-  const [copiedKey, setCopiedKey] = useState(false);
 
   const showExportToast = (msg: string) => {
     setExportToast(msg);
     setTimeout(() => setExportToast(null), 3000);
   };
 
-  const mcqs = data.mcqs && data.mcqs.length > 0 ? data.mcqs : [
-    {
-      id: 'mcq-sample-1',
-      question: 'During the complete oxidation of one molecule of glucose, how many total molecules of NADH are generated specifically within the mitochondrial matrix prior to the electron transport chain?',
-      options: ['2 NADH', '6 NADH', '8 NADH', '10 NADH'],
-      correctIndex: 2,
-      correctAnswer: '8 NADH',
-      explanation: 'Calculation: 2 NADH are synthesized by the Pyruvate Dehydrogenase complex (converting 2 pyruvates to acetyl-CoA) inside the matrix + 6 NADH from 2 full turns of the Citric Acid Cycle = 8 mitochondrial NADH total.',
-      theme: 'Krebs Substrates & Yields',
-      difficulty: 'High' as const,
-      mnemonic: 'Can I Keep Selling Substances For Money, Officer? (Citrate, Isocitrate, α-Ketoglutarate, Succinyl-CoA, Succinate, Fumarate, Malate, Oxaloacetate)',
-      notes: 'The 2 cytosolic NADH from glycolysis require the malate-aspartate or glycerol-3-phosphate shuttle to enter.',
-    },
-  ];
+  const mcqs =
+    data.mcqs && data.mcqs.length > 0
+      ? data.mcqs
+      : [
+          {
+            id: 'mcq-sample-1',
+            question:
+              'During the complete oxidation of one molecule of glucose, how many total molecules of NADH are generated specifically within the mitochondrial matrix prior to the electron transport chain?',
+            options: ['2 NADH', '6 NADH', '8 NADH', '10 NADH'],
+            correctIndex: 2,
+            correctAnswer: '8 NADH',
+            explanation:
+              '2 NADH are synthesized by the Pyruvate Dehydrogenase complex (converting 2 pyruvates to acetyl-CoA) inside the matrix + 6 NADH from 2 full turns of the Citric Acid Cycle = 8 mitochondrial NADH total.',
+            theme: 'Krebs Substrates & Yields',
+            difficulty: 'High' as const,
+            mnemonic:
+              'Can I Keep Selling Substances For Money, Officer? (Citrate, Isocitrate, a-Ketoglutarate, Succinyl-CoA, Succinate, Fumarate, Malate, Oxaloacetate)',
+            notes:
+              'The 2 cytosolic NADH from glycolysis require the malate-aspartate or glycerol-3-phosphate shuttle to enter.',
+          },
+        ];
 
   const currentMcq: MCQItem = mcqs[currentMcqIndex] || mcqs[0];
   const selectedOption = selectedAnswers[currentMcqIndex];
   const isAnswered = selectedOption !== undefined;
-  const isCorrect = isAnswered && selectedOption === currentMcq.correctIndex;
 
   const handleSelectOption = (idx: number) => {
     setSelectedAnswers((prev) => ({
@@ -96,21 +94,17 @@ export const StudyPackViewer: React.FC<StudyPackViewerProps> = ({
     }));
   };
 
-  // Option subtitle tags for academic realism
-  const optionAnnotations = ['Glycolytic net', 'Cycle alone', 'Matrix yield', 'Total cell yield'];
-
-  // Markdown generator
   const handleDownloadMD = () => {
     try {
-      let md = `# Notes2Quiz Study Pack — ${sessionTitle}\n\n`;
-      md += `> **Language**: ${language} | **Target Exam**: ${examDate || 'General Study'} | *FAST-NUCES / Stanford Pre-Med*\n\n---\n\n`;
+      let md = `# Notes2Quiz Study Pack: ${sessionTitle}\n\n`;
+      md += `> Language: ${language} | Target Exam: ${examDate || 'General Study'}\n\n---\n\n`;
       md += `## MCQs (${mcqs.length} Questions)\n\n`;
       mcqs.forEach((m, idx) => {
         md += `### Q${idx + 1}: ${m.question}\n\n`;
         m.options.forEach((opt, oi) => {
-          md += `- [${oi === m.correctIndex ? 'x' : ' '}] **${String.fromCharCode(65 + oi)}**. ${opt}\n`;
+          md += `- [${oi === m.correctIndex ? 'x' : ' '}] ${String.fromCharCode(65 + oi)}. ${opt}\n`;
         });
-        md += `\n*Explanation*: ${m.explanation}\n\n`;
+        md += `\nExplanation: ${m.explanation}\n\n`;
       });
       const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
       const url = URL.createObjectURL(blob);
@@ -125,10 +119,9 @@ export const StudyPackViewer: React.FC<StudyPackViewerProps> = ({
     }
   };
 
-  // TXT generator
   const handleDownloadTXT = () => {
     try {
-      let txt = `========================================\nNOTES2QUIZ STUDY PACK: ${sessionTitle}\nLanguage: ${language}\n========================================\n\n`;
+      let txt = `NOTES2QUIZ STUDY PACK: ${sessionTitle}\nLanguage: ${language}\n\n`;
       mcqs.forEach((m, idx) => {
         txt += `Q${idx + 1}: ${m.question}\n`;
         m.options.forEach((opt, oi) => {
@@ -150,7 +143,6 @@ export const StudyPackViewer: React.FC<StudyPackViewerProps> = ({
     }
   };
 
-  // PDF generator
   const handleDownloadPDF = async () => {
     try {
       setIsExporting(true);
@@ -160,7 +152,7 @@ export const StudyPackViewer: React.FC<StudyPackViewerProps> = ({
         examDate,
         language,
       });
-      showExportToast('PDF downloaded successfully');
+      showExportToast('PDF downloaded');
     } catch (e) {
       console.error(e);
       showExportToast('Failed to export PDF');
@@ -169,7 +161,6 @@ export const StudyPackViewer: React.FC<StudyPackViewerProps> = ({
     }
   };
 
-  // DOCX generator
   const handleDownloadDOCX = async () => {
     try {
       setIsExporting(true);
@@ -179,7 +170,7 @@ export const StudyPackViewer: React.FC<StudyPackViewerProps> = ({
         examDate,
         language,
       });
-      showExportToast('DOCX downloaded successfully');
+      showExportToast('DOCX downloaded');
     } catch (e) {
       console.error(e);
       showExportToast('Failed to export DOCX');
@@ -188,56 +179,79 @@ export const StudyPackViewer: React.FC<StudyPackViewerProps> = ({
     }
   };
 
-  // Share link
   const handleShare = async () => {
     const url = window.location.href;
     try {
       await navigator.clipboard.writeText(url);
-      showExportToast('Study link copied to clipboard!');
+      showExportToast('Study link copied');
     } catch {
-      showExportToast('Study link copied!');
+      showExportToast('Study link copied');
     }
   };
 
   return (
-    <div className="rounded-[16px] bg-[#0E111C] border border-[#1E2438] text-[#FCFCFC] shadow-2xl overflow-hidden space-y-4">
+    <div
+      className={`rounded-none overflow-hidden space-y-5 transition-colors duration-150 ${
+        isNightMode
+          ? 'bg-[#141416] text-[#EDEDED]'
+          : 'bg-[#F2F1EC] text-[#1A1A1A]'
+      }`}
+    >
       {/* Toast Notification */}
       {exportToast && (
-        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full bg-[#1A2033] border border-indigo-500/60 text-white text-[12px] font-medium shadow-2xl animate-in fade-in slide-in-from-top-2">
+        <div
+          className={`fixed top-16 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-[6px] border text-[13px] font-medium shadow-[0_8px_24px_rgba(0,0,0,0.08)] ${
+            isNightMode
+              ? 'bg-[#1C1C1F] border-[#EDEDED]/15 text-[#EDEDED]'
+              : 'bg-[#FAFAF7] border-[#1A1A1A]/15 text-[#1A1A1A]'
+          }`}
+        >
           {exportToast}
         </div>
       )}
 
-      {/* Main Top Header matching screenshot */}
-      <div className="p-4 sm:p-5 border-b border-[#1A2033] bg-gradient-to-r from-[#111422] to-[#0E111C] flex items-center justify-between gap-3">
+      {/* Top Header */}
+      <div
+        className={`p-5 border-b flex items-center justify-between gap-3 ${
+          isNightMode ? 'border-[#EDEDED]/10' : 'border-[#1A1A1A]/10'
+        }`}
+      >
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-[10px] bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center font-bold shadow-md shrink-0">
-            <GraduationCap className="w-5 h-5" />
-          </div>
+          <GraduationCap className="w-5 h-5 shrink-0" strokeWidth={1.5} />
           <div>
-            <h2 className="font-bold text-[15px] sm:text-[16px] text-[#FCFCFC] tracking-tight">
-              Study Pack Generated: {sessionTitle}
+            <h2 className="font-medium text-[16px] tracking-[-0.01em]">
+              {sessionTitle}
             </h2>
-            <p className="text-[12px] text-[#737A8C]">
-              {mcqs.length} High-Yield Multiple Choice Questions • Core Concepts Focus
+            <p
+              className={`text-[13px] ${
+                isNightMode ? 'text-[#8A8A8A]' : 'text-[#6B6B6B]'
+              }`}
+            >
+              {mcqs.length} multiple choice questions · {language}
             </p>
           </div>
         </div>
 
-        <div className="px-3 py-1 rounded-full bg-[#141828] border border-[#1E253E] text-[11px] font-mono text-indigo-300 shrink-0">
-          {currentMcqIndex + 1}/{mcqs.length} Loaded
-        </div>
+        <span
+          className={`text-[13px] shrink-0 ${
+            isNightMode ? 'text-[#8A8A8A]' : 'text-[#6B6B6B]'
+          }`}
+        >
+          {currentMcqIndex + 1} / {mcqs.length}
+        </span>
       </div>
 
       {/* Module Switcher Tabs */}
-      <div className="px-4 sm:px-5 flex items-center gap-1.5 overflow-x-auto pb-1 text-[12px] scrollbar-none">
+      <div className="px-5 flex items-center gap-1.5 overflow-x-auto pb-1 text-[13px]">
         <button
           type="button"
           onClick={() => setActiveTab('mcqs')}
-          className={`px-3 py-1.5 rounded-full font-medium transition-all shrink-0 cursor-pointer ${
+          className={`px-3 py-1.5 rounded-[6px] font-medium transition-colors duration-150 shrink-0 cursor-pointer ${
             activeTab === 'mcqs'
-              ? 'bg-indigo-600 text-white shadow-sm'
-              : 'bg-[#141828] text-[#A1A1A1] hover:text-white'
+              ? 'bg-[#2D4A3E] text-[#EDEDED]'
+              : isNightMode
+              ? 'text-[#8A8A8A] hover:text-[#EDEDED] hover:bg-[#1C1C1F]'
+              : 'text-[#6B6B6B] hover:text-[#1A1A1A] hover:bg-[#E8E6DF]'
           }`}
         >
           MCQs ({mcqs.length})
@@ -247,13 +261,15 @@ export const StudyPackViewer: React.FC<StudyPackViewerProps> = ({
           <button
             type="button"
             onClick={() => setActiveTab('exam_notes')}
-            className={`px-3 py-1.5 rounded-full font-medium transition-all shrink-0 cursor-pointer ${
+            className={`px-3 py-1.5 rounded-[6px] font-medium transition-colors duration-150 shrink-0 cursor-pointer ${
               activeTab === 'exam_notes'
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'bg-[#141828] text-[#A1A1A1] hover:text-white'
+                ? 'bg-[#2D4A3E] text-[#EDEDED]'
+                : isNightMode
+                ? 'text-[#8A8A8A] hover:text-[#EDEDED] hover:bg-[#1C1C1F]'
+                : 'text-[#6B6B6B] hover:text-[#1A1A1A] hover:bg-[#E8E6DF]'
             }`}
           >
-            Exam Notes (Shorts + Longs)
+            Exam notes
           </button>
         )}
 
@@ -261,10 +277,12 @@ export const StudyPackViewer: React.FC<StudyPackViewerProps> = ({
           <button
             type="button"
             onClick={() => setActiveTab('flashcards')}
-            className={`px-3 py-1.5 rounded-full font-medium transition-all shrink-0 cursor-pointer ${
+            className={`px-3 py-1.5 rounded-[6px] font-medium transition-colors duration-150 shrink-0 cursor-pointer ${
               activeTab === 'flashcards'
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'bg-[#141828] text-[#A1A1A1] hover:text-white'
+                ? 'bg-[#2D4A3E] text-[#EDEDED]'
+                : isNightMode
+                ? 'text-[#8A8A8A] hover:text-[#EDEDED] hover:bg-[#1C1C1F]'
+                : 'text-[#6B6B6B] hover:text-[#1A1A1A] hover:bg-[#E8E6DF]'
             }`}
           >
             Flashcards ({data.flashcards.length})
@@ -275,13 +293,15 @@ export const StudyPackViewer: React.FC<StudyPackViewerProps> = ({
           <button
             type="button"
             onClick={() => setActiveTab('simplified')}
-            className={`px-3 py-1.5 rounded-full font-medium transition-all shrink-0 cursor-pointer ${
+            className={`px-3 py-1.5 rounded-[6px] font-medium transition-colors duration-150 shrink-0 cursor-pointer ${
               activeTab === 'simplified'
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'bg-[#141828] text-[#A1A1A1] hover:text-white'
+                ? 'bg-[#2D4A3E] text-[#EDEDED]'
+                : isNightMode
+                ? 'text-[#8A8A8A] hover:text-[#EDEDED] hover:bg-[#1C1C1F]'
+                : 'text-[#6B6B6B] hover:text-[#1A1A1A] hover:bg-[#E8E6DF]'
             }`}
           >
-            Simplified Notes
+            Simplified notes
           </button>
         )}
 
@@ -289,13 +309,15 @@ export const StudyPackViewer: React.FC<StudyPackViewerProps> = ({
           <button
             type="button"
             onClick={() => setActiveTab('key_points')}
-            className={`px-3 py-1.5 rounded-full font-medium transition-all shrink-0 cursor-pointer ${
+            className={`px-3 py-1.5 rounded-[6px] font-medium transition-colors duration-150 shrink-0 cursor-pointer ${
               activeTab === 'key_points'
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'bg-[#141828] text-[#A1A1A1] hover:text-white'
+                ? 'bg-[#2D4A3E] text-[#EDEDED]'
+                : isNightMode
+                ? 'text-[#8A8A8A] hover:text-[#EDEDED] hover:bg-[#1C1C1F]'
+                : 'text-[#6B6B6B] hover:text-[#1A1A1A] hover:bg-[#E8E6DF]'
             }`}
           >
-            Key Points
+            Key points
           </button>
         )}
 
@@ -303,13 +325,15 @@ export const StudyPackViewer: React.FC<StudyPackViewerProps> = ({
           <button
             type="button"
             onClick={() => setActiveTab('revision')}
-            className={`px-3 py-1.5 rounded-full font-medium transition-all shrink-0 cursor-pointer ${
+            className={`px-3 py-1.5 rounded-[6px] font-medium transition-colors duration-150 shrink-0 cursor-pointer ${
               activeTab === 'revision'
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'bg-[#141828] text-[#A1A1A1] hover:text-white'
+                ? 'bg-[#2D4A3E] text-[#EDEDED]'
+                : isNightMode
+                ? 'text-[#8A8A8A] hover:text-[#EDEDED] hover:bg-[#1C1C1F]'
+                : 'text-[#6B6B6B] hover:text-[#1A1A1A] hover:bg-[#E8E6DF]'
             }`}
           >
-            Revision Plan
+            Revision plan
           </button>
         )}
 
@@ -317,109 +341,115 @@ export const StudyPackViewer: React.FC<StudyPackViewerProps> = ({
           <button
             type="button"
             onClick={() => setActiveTab('active_recall')}
-            className={`px-3 py-1.5 rounded-full font-medium transition-all shrink-0 cursor-pointer ${
+            className={`px-3 py-1.5 rounded-[6px] font-medium transition-colors duration-150 shrink-0 cursor-pointer ${
               activeTab === 'active_recall'
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'bg-[#141828] text-[#A1A1A1] hover:text-white'
+                ? 'bg-[#2D4A3E] text-[#EDEDED]'
+                : isNightMode
+                ? 'text-[#8A8A8A] hover:text-[#EDEDED] hover:bg-[#1C1C1F]'
+                : 'text-[#6B6B6B] hover:text-[#1A1A1A] hover:bg-[#E8E6DF]'
             }`}
           >
-            Active Recall
+            Active recall
           </button>
         )}
       </div>
 
-      {/* TAB CONTENT 1: MCQs Interactive Workspace matching reference */}
+      {/* TAB CONTENT 1: MCQs */}
       {activeTab === 'mcqs' && (
-        <div className="px-4 sm:px-6 py-2 space-y-4">
-          {/* Question Metadata Bar */}
-          <div className="flex items-center justify-between text-[11px] pb-1">
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-[#FCFCFC]">
-                Question {currentMcqIndex + 1} of {mcqs.length}
-              </span>
-              <span className="px-2 py-0.5 rounded bg-rose-500/15 text-rose-300 font-semibold border border-rose-500/30 text-[10px]">
-                Difficulty: {currentMcq.difficulty || 'High'}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-1.5 text-indigo-300 font-medium">
-              <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
-              <span>Theme: {currentMcq.theme || 'Krebs Substrates & Yields'}</span>
-            </div>
+        <div className="px-5 py-2 space-y-4">
+          {/* Question Metadata */}
+          <div
+            className={`flex items-center justify-between text-[12px] ${
+              isNightMode ? 'text-[#8A8A8A]' : 'text-[#6B6B6B]'
+            }`}
+          >
+            <span>
+              Question {currentMcqIndex + 1} of {mcqs.length} · Difficulty:{' '}
+              {currentMcq.difficulty || 'High'}
+            </span>
+            <span>{currentMcq.theme || 'Core Concepts'}</span>
           </div>
 
           {/* Question Stem */}
-          <h3 className="text-[15px] sm:text-[16px] font-semibold text-[#FCFCFC] leading-relaxed pt-1">
+          <h3 className="text-[16px] font-medium leading-[1.6]">
             {currentMcq.question}
           </h3>
 
-          {/* Option Cards (A, B, C, D) */}
-          <div className="space-y-2.5 pt-2">
+          {/* Option Buttons */}
+          <div className="space-y-2 pt-1">
             {currentMcq.options.map((opt, optIdx) => {
               const isThisSelected = selectedOption === optIdx;
               const isThisCorrect = optIdx === currentMcq.correctIndex;
-              const annotation = optionAnnotations[optIdx] || 'Option';
 
               return (
                 <div key={optIdx} className="space-y-2">
                   <button
                     type="button"
                     onClick={() => handleSelectOption(optIdx)}
-                    className={`w-full text-left p-3 sm:p-3.5 rounded-[10px] flex items-center justify-between gap-3 transition-all cursor-pointer border ${
+                    className={`w-full text-left p-3.5 rounded-[6px] flex items-center justify-between gap-3 transition-colors duration-150 cursor-pointer border ${
                       isThisSelected && isThisCorrect
-                        ? 'bg-[#121A26] border-emerald-500/80 ring-1 ring-emerald-500/40'
+                        ? 'bg-[#2D4A3E] border-[#2D4A3E] text-[#EDEDED]'
                         : isThisSelected && !isThisCorrect
-                        ? 'bg-rose-950/20 border-rose-500/80 text-rose-200'
+                        ? isNightMode
+                          ? 'bg-[#2A1717] border-[#7F2F2F] text-[#EDEDED]'
+                          : 'bg-[#F5E6E6] border-[#B85C5C] text-[#1A1A1A]'
                         : isThisCorrect && isAnswered
-                        ? 'bg-[#121A26] border-emerald-500/50'
-                        : 'bg-[#131726] border-[#1E253A] hover:border-[#2E3754] hover:bg-[#161B2D]'
+                        ? isNightMode
+                          ? 'bg-[#0B0B0C] border-[#2D4A3E] text-[#EDEDED]'
+                          : 'bg-[#FAFAF7] border-[#2D4A3E] text-[#1A1A1A]'
+                        : isNightMode
+                        ? 'bg-[#0B0B0C] border-[#EDEDED]/10 hover:bg-[#1C1C1F] text-[#EDEDED]'
+                        : 'bg-[#FAFAF7] border-[#1A1A1A]/10 hover:bg-[#E8E6DF] text-[#1A1A1A]'
                     }`}
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <span
-                        className={`w-6 h-6 rounded-md flex items-center justify-center text-[12px] font-bold shrink-0 ${
+                        className={`w-6 h-6 rounded-[4px] flex items-center justify-center text-[12px] font-medium shrink-0 ${
                           isThisSelected && isThisCorrect
-                            ? 'bg-emerald-500 text-[#0A0C13]'
+                            ? 'bg-[#0B0B0C]/30 text-[#EDEDED]'
                             : isThisSelected && !isThisCorrect
-                            ? 'bg-rose-500 text-white'
-                            : 'bg-[#1C2338] text-[#A1A1A1]'
+                            ? 'bg-[#7F2F2F] text-[#EDEDED]'
+                            : isNightMode
+                            ? 'bg-[#1C1C1F] text-[#8A8A8A]'
+                            : 'bg-[#E8E6DF] text-[#6B6B6B]'
                         }`}
                       >
                         {String.fromCharCode(65 + optIdx)}
                       </span>
-                      <span className="text-[14px] font-medium text-[#FCFCFC] truncate">
-                        {opt}
-                      </span>
+                      <span className="text-[14px] truncate">{opt}</span>
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0">
-                      {isThisCorrect && isAnswered && (
-                        <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-semibold text-[11px] flex items-center gap-1 border border-emerald-500/40">
-                          <Check className="w-3 h-3 stroke-[3]" />
-                          <span>Correct Answer</span>
-                        </span>
-                      )}
-                      <span className="text-[11px] font-mono text-[#525866]">
-                        {annotation}
+                    {isThisCorrect && isAnswered && (
+                      <span className="text-[12px] font-medium flex items-center gap-1 shrink-0">
+                        <Check className="w-3.5 h-3.5" strokeWidth={1.5} />
+                        <span>Correct</span>
                       </span>
-                    </div>
+                    )}
                   </button>
 
-                  {/* If this is the chosen correct answer or answered, show calculation breakdown */}
                   {isThisCorrect && isAnswered && (
-                    <div className="p-3.5 rounded-[10px] bg-[#0E1724] border border-emerald-500/30 text-[12px] leading-relaxed space-y-2 animate-in fade-in">
-                      <div className="text-[#E2E8F0]">
-                        <strong className="text-emerald-400 font-semibold">Calculation: </strong>
+                    <div
+                      className={`p-3.5 rounded-none border-l-2 border-[#2D4A3E] text-[13px] leading-[1.6] space-y-2 ${
+                        isNightMode
+                          ? 'bg-[#0B0B0C] text-[#EDEDED]'
+                          : 'bg-[#FAFAF7] text-[#1A1A1A]'
+                      }`}
+                    >
+                      <div>
+                        <span className="font-medium">Explanation: </span>
                         {currentMcq.explanation}
                       </div>
 
                       {currentMcq.notes && (
-                        <div className="flex items-start gap-2 pt-1 border-t border-emerald-500/20 text-[#A1A1A1]">
-                          <Lightbulb className="w-3.5 h-3.5 text-[#FFD166] shrink-0 mt-0.5" />
-                          <span>
-                            <strong className="text-[#FFD166]">Note: </strong>
-                            {currentMcq.notes}
-                          </span>
+                        <div
+                          className={`flex items-start gap-2 pt-2 border-t ${
+                            isNightMode
+                              ? 'border-[#EDEDED]/10 text-[#8A8A8A]'
+                              : 'border-[#1A1A1A]/10 text-[#6B6B6B]'
+                          }`}
+                        >
+                          <Lightbulb className="w-4 h-4 shrink-0 mt-0.5" strokeWidth={1.5} />
+                          <span>{currentMcq.notes}</span>
                         </div>
                       )}
                     </div>
@@ -429,66 +459,86 @@ export const StudyPackViewer: React.FC<StudyPackViewerProps> = ({
             })}
           </div>
 
-          {/* Expandable Mnemonic Key Accordion */}
-          <div className="pt-2">
-            <button
-              type="button"
-              onClick={() => setIsMnemonicOpen((p) => !p)}
-              className="w-full p-3 rounded-[10px] bg-[#131726] border border-[#1E253A] flex items-center justify-between text-[12px] font-medium text-indigo-300 hover:bg-[#161B2D] transition-colors cursor-pointer"
-            >
-              <span className="flex items-center gap-2">
-                <Brain className="w-4 h-4 text-indigo-400" />
-                <span>Mnemonic Key: Citric Acid Cycle Intermediates</span>
-              </span>
-              {isMnemonicOpen ? (
-                <ChevronUp className="w-4 h-4 text-[#737A8C]" />
-              ) : (
-                <ChevronDown className="w-4 h-4 text-[#737A8C]" />
+          {/* Expandable Mnemonic Key */}
+          {currentMcq.mnemonic && (
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => setIsMnemonicOpen((p) => !p)}
+                className={`w-full p-3 rounded-[6px] border flex items-center justify-between text-[13px] font-medium transition-colors duration-150 cursor-pointer ${
+                  isNightMode
+                    ? 'bg-[#0B0B0C] border-[#EDEDED]/10 text-[#EDEDED] hover:bg-[#1C1C1F]'
+                    : 'bg-[#FAFAF7] border-[#1A1A1A]/10 text-[#1A1A1A] hover:bg-[#E8E6DF]'
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <Brain className="w-4 h-4" strokeWidth={1.5} />
+                  <span>Mnemonic key</span>
+                </span>
+                {isMnemonicOpen ? (
+                  <ChevronUp className="w-4 h-4" strokeWidth={1.5} />
+                ) : (
+                  <ChevronDown className="w-4 h-4" strokeWidth={1.5} />
+                )}
+              </button>
+
+              {isMnemonicOpen && (
+                <div
+                  className={`p-3 border-x border-b text-[13px] leading-[1.6] ${
+                    isNightMode
+                      ? 'bg-[#0B0B0C] border-[#EDEDED]/10 text-[#8A8A8A]'
+                      : 'bg-[#FAFAF7] border-[#1A1A1A]/10 text-[#6B6B6B]'
+                  }`}
+                >
+                  {currentMcq.mnemonic}
+                </div>
               )}
-            </button>
+            </div>
+          )}
 
-            {isMnemonicOpen && (
-              <div className="p-3 bg-[#0F1322] border-x border-b border-[#1E253A] rounded-b-[10px] text-[12px] text-[#A1A1A1] leading-relaxed -mt-1 animate-in fade-in">
-                <p className="font-mono text-indigo-200">
-                  {currentMcq.mnemonic ||
-                    '"Can I Keep Selling Substances For Money, Officer?" (Citrate → Isocitrate → α-Ketoglutarate → Succinyl-CoA → Succinate → Fumarate → Malate → Oxaloacetate)'}
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* Bottom Pagination & Navigation */}
-          <div className="flex items-center justify-between pt-4 border-t border-[#1A2033]">
+          {/* Bottom Pagination */}
+          <div
+            className={`flex items-center justify-between pt-4 border-t ${
+              isNightMode ? 'border-[#EDEDED]/10' : 'border-[#1A1A1A]/10'
+            }`}
+          >
             <button
               type="button"
               onClick={() => setCurrentMcqIndex((p) => Math.max(0, p - 1))}
               disabled={currentMcqIndex === 0}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] text-[12px] font-medium transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[6px] text-[13px] font-medium transition-colors duration-150 ${
                 currentMcqIndex > 0
-                  ? 'bg-[#161B2D] text-white hover:bg-[#1E253C] cursor-pointer'
-                  : 'text-[#4A5164] cursor-not-allowed opacity-50'
+                  ? isNightMode
+                    ? 'bg-[#0B0B0C] text-[#EDEDED] hover:bg-[#1C1C1F] cursor-pointer'
+                    : 'bg-[#FAFAF7] text-[#1A1A1A] hover:bg-[#E8E6DF] cursor-pointer'
+                  : 'opacity-40 cursor-not-allowed'
               }`}
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronLeft className="w-4 h-4" strokeWidth={1.5} />
               <span>Previous</span>
             </button>
 
-            {/* Dots */}
             <div className="flex items-center gap-1.5">
               {mcqs.slice(0, 5).map((_, idx) => (
                 <span
                   key={idx}
                   onClick={() => setCurrentMcqIndex(idx)}
-                  className={`w-2 h-2 rounded-full cursor-pointer transition-all ${
+                  className={`h-1.5 rounded-[2px] cursor-pointer transition-colors duration-150 ${
                     idx === currentMcqIndex
-                      ? 'bg-indigo-400 w-4'
-                      : 'bg-[#2A334E] hover:bg-[#3D4B70]'
+                      ? 'bg-[#2D4A3E] w-4'
+                      : isNightMode
+                      ? 'bg-[#EDEDED]/20 hover:bg-[#EDEDED]/40 w-1.5'
+                      : 'bg-[#1A1A1A]/20 hover:bg-[#1A1A1A]/40 w-1.5'
                   }`}
                 />
               ))}
               {mcqs.length > 5 && (
-                <span className="text-[11px] font-mono text-[#737A8C] ml-1">
-                  ... {mcqs.length}
+                <span
+                  className={`text-[12px] ml-1 ${
+                    isNightMode ? 'text-[#8A8A8A]' : 'text-[#6B6B6B]'
+                  }`}
+                >
+                  · {mcqs.length}
                 </span>
               )}
             </div>
@@ -497,39 +547,50 @@ export const StudyPackViewer: React.FC<StudyPackViewerProps> = ({
               type="button"
               onClick={() => setCurrentMcqIndex((p) => Math.min(mcqs.length - 1, p + 1))}
               disabled={currentMcqIndex === mcqs.length - 1}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] text-[12px] font-medium transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[6px] text-[13px] font-medium transition-colors duration-150 ${
                 currentMcqIndex < mcqs.length - 1
-                  ? 'bg-gradient-to-r from-indigo-600 to-indigo-500 text-white hover:opacity-95 cursor-pointer shadow-sm'
-                  : 'text-[#4A5164] cursor-not-allowed opacity-50'
+                  ? 'bg-[#2D4A3E] hover:bg-[#375A4B] text-[#EDEDED] cursor-pointer'
+                  : 'opacity-40 cursor-not-allowed'
               }`}
             >
-              <span>Next (Q{currentMcqIndex + 2})</span>
-              <ChevronRight className="w-4 h-4" />
+              <span>Next</span>
+              <ChevronRight className="w-4 h-4" strokeWidth={1.5} />
             </button>
           </div>
         </div>
       )}
 
-      {/* TAB CONTENT 2: Exam Notes (Shorts & Longs) */}
+      {/* TAB CONTENT 2: Exam Notes */}
       {activeTab === 'exam_notes' && data.examNotes && (
-        <div className="px-4 sm:px-6 py-3 space-y-5">
-          {/* Short Questions */}
+        <div className="px-5 py-2 space-y-6">
           <div className="space-y-3">
-            <h4 className="text-[13px] font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-2">
-              <FileText className="w-4 h-4" />
-              <span>Part 1: University Short Questions (2–3 Marks)</span>
+            <h4 className="text-[14px] font-medium flex items-center gap-2">
+              <FileText className="w-4 h-4" strokeWidth={1.5} />
+              <span>Short questions</span>
             </h4>
-            <div className="space-y-2.5">
+            <div className="space-y-3">
               {data.examNotes.shortQuestions?.map((sq, i) => (
-                <div key={i} className="p-3.5 rounded-[10px] bg-[#131726] border border-[#1E253A] space-y-1.5">
+                <div
+                  key={i}
+                  className={`p-4 rounded-none space-y-2 ${
+                    isNightMode ? 'bg-[#0B0B0C]' : 'bg-[#FAFAF7]'
+                  }`}
+                >
                   <div className="flex items-start justify-between gap-2">
-                    <p className="text-[13px] font-semibold text-[#FCFCFC]">{sq.question}</p>
-                    <span className="text-[11px] font-mono text-emerald-400 bg-emerald-500/15 px-1.5 py-0.5 rounded">
-                      {sq.marks}M
+                    <p className="text-[14px] font-medium">{sq.question}</p>
+                    <span
+                      className={`text-[12px] shrink-0 ${
+                        isNightMode ? 'text-[#8A8A8A]' : 'text-[#6B6B6B]'
+                      }`}
+                    >
+                      {sq.marks} marks
                     </span>
                   </div>
-                  <p className="text-[12px] text-[#A1A1A1] leading-relaxed">
-                    <strong className="text-emerald-400">Model Answer: </strong>
+                  <p
+                    className={`text-[13px] leading-[1.6] ${
+                      isNightMode ? 'text-[#8A8A8A]' : 'text-[#6B6B6B]'
+                    }`}
+                  >
                     {sq.answer}
                   </p>
                 </div>
@@ -537,26 +598,41 @@ export const StudyPackViewer: React.FC<StudyPackViewerProps> = ({
             </div>
           </div>
 
-          {/* Long Questions */}
-          <div className="space-y-3 pt-2 border-t border-[#1A2033]">
-            <h4 className="text-[13px] font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-2">
-              <BookOpen className="w-4 h-4" />
-              <span>Part 2: Comprehensive Long Questions (7 Marks)</span>
+          <div
+            className={`space-y-3 pt-4 border-t ${
+              isNightMode ? 'border-[#EDEDED]/10' : 'border-[#1A1A1A]/10'
+            }`}
+          >
+            <h4 className="text-[14px] font-medium flex items-center gap-2">
+              <BookOpen className="w-4 h-4" strokeWidth={1.5} />
+              <span>Long questions</span>
             </h4>
             <div className="space-y-3">
               {data.examNotes.longQuestions?.map((lq, i) => (
-                <div key={i} className="p-4 rounded-[10px] bg-[#131726] border border-[#1E253A] space-y-2">
+                <div
+                  key={i}
+                  className={`p-4 rounded-none space-y-2 ${
+                    isNightMode ? 'bg-[#0B0B0C]' : 'bg-[#FAFAF7]'
+                  }`}
+                >
                   <div className="flex items-start justify-between gap-2">
-                    <h5 className="text-[14px] font-semibold text-[#FCFCFC]">{lq.question}</h5>
-                    <span className="text-[11px] font-mono text-indigo-400 bg-indigo-500/15 px-1.5 py-0.5 rounded">
-                      {lq.marks}M
+                    <h5 className="text-[14px] font-medium">{lq.question}</h5>
+                    <span
+                      className={`text-[12px] shrink-0 ${
+                        isNightMode ? 'text-[#8A8A8A]' : 'text-[#6B6B6B]'
+                      }`}
+                    >
+                      {lq.marks} marks
                     </span>
                   </div>
-                  <div className="text-[12px] text-[#A1A1A1] space-y-1 bg-[#0E111C] p-3 rounded-[8px] border border-[#1A2033]">
-                    <span className="font-semibold text-white block mb-1">Answer Outline & Scoring Rubric:</span>
+                  <div
+                    className={`text-[13px] space-y-1.5 pt-1 ${
+                      isNightMode ? 'text-[#8A8A8A]' : 'text-[#6B6B6B]'
+                    }`}
+                  >
                     {lq.outline?.map((pt, pIdx) => (
-                      <div key={pIdx} className="flex items-start gap-1.5">
-                        <span className="text-indigo-400 font-bold">•</span>
+                      <div key={pIdx} className="flex items-start gap-2">
+                        <span>·</span>
                         <span>{pt}</span>
                       </div>
                     ))}
@@ -570,19 +646,30 @@ export const StudyPackViewer: React.FC<StudyPackViewerProps> = ({
 
       {/* TAB CONTENT 3: Flashcards */}
       {activeTab === 'flashcards' && data.flashcards && (
-        <div className="px-4 sm:px-6 py-3">
-          <Flashcard cards={data.flashcards} />
+        <div className="px-5 py-2">
+          <Flashcard cards={data.flashcards} isNightMode={isNightMode} />
         </div>
       )}
 
       {/* TAB CONTENT 4: Simplified Notes */}
       {activeTab === 'simplified' && data.simplifiedNotes && (
-        <div className="px-4 sm:px-6 py-3 space-y-3">
-          <h3 className="text-[15px] font-semibold text-white">{data.simplifiedNotes.title}</h3>
+        <div className="px-5 py-2 space-y-3">
+          <h3 className="text-[15px] font-medium">{data.simplifiedNotes.title}</h3>
           {data.simplifiedNotes.sections?.map((sec, i) => (
-            <div key={i} className="space-y-1 p-3 rounded-[8px] bg-[#131726] border border-[#1E253A]">
-              <h4 className="text-[13px] font-semibold text-indigo-400">{sec.heading}</h4>
-              <p className="text-[13px] text-[#E2E8F0] leading-relaxed whitespace-pre-line">{sec.content}</p>
+            <div
+              key={i}
+              className={`space-y-1.5 p-4 rounded-none ${
+                isNightMode ? 'bg-[#0B0B0C]' : 'bg-[#FAFAF7]'
+              }`}
+            >
+              <h4 className="text-[14px] font-medium">{sec.heading}</h4>
+              <p
+                className={`text-[14px] leading-[1.6] whitespace-pre-line ${
+                  isNightMode ? 'text-[#8A8A8A]' : 'text-[#6B6B6B]'
+                }`}
+              >
+                {sec.content}
+              </p>
             </div>
           ))}
         </div>
@@ -590,12 +677,18 @@ export const StudyPackViewer: React.FC<StudyPackViewerProps> = ({
 
       {/* TAB CONTENT 5: Key Points */}
       {activeTab === 'key_points' && data.keyPoints && (
-        <div className="px-4 sm:px-6 py-3 space-y-2.5">
-          <p className="text-[12px] text-[#A1A1A1] italic">{data.keyPoints.summary}</p>
+        <div className="px-5 py-2 space-y-3">
+          <p
+            className={`text-[13px] ${
+              isNightMode ? 'text-[#8A8A8A]' : 'text-[#6B6B6B]'
+            }`}
+          >
+            {data.keyPoints.summary}
+          </p>
           <ul className="space-y-2">
             {data.keyPoints.points?.map((pt, i) => (
-              <li key={i} className="flex items-start gap-2 text-[13px] text-[#E2E8F0]">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-2 shrink-0" />
+              <li key={i} className="flex items-start gap-2.5 text-[14px] leading-[1.6]">
+                <span className="text-[#2D4A3E] font-medium">·</span>
                 <span>{pt}</span>
               </li>
             ))}
@@ -605,86 +698,105 @@ export const StudyPackViewer: React.FC<StudyPackViewerProps> = ({
 
       {/* TAB CONTENT 6: Revision Plan */}
       {activeTab === 'revision' && data.revisionPlan && (
-        <div className="px-4 sm:px-6 py-3">
+        <div className="px-5 py-2">
           <RevisionPlan
             examDate={examDate || data.revisionPlan.examDate}
             totalDays={data.revisionPlan.totalDays}
             days={data.revisionPlan.days}
+            isNightMode={isNightMode}
           />
         </div>
       )}
 
       {/* TAB CONTENT 7: Active Recall */}
       {activeTab === 'active_recall' && data.activeRecall && (
-        <div className="px-4 sm:px-6 py-3">
-          <ActiveRecall items={data.activeRecall} />
+        <div className="px-5 py-2">
+          <ActiveRecall items={data.activeRecall} isNightMode={isNightMode} />
         </div>
       )}
 
-      {/* Bottom Export & Action Bar (Requirement 5 & Screenshot matching) */}
-      <div className="p-3 sm:p-4 bg-[#0A0C14] border-t border-[#1A2033] flex flex-wrap items-center justify-between gap-2.5">
-        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-          {/* PDF Guide */}
+      {/* Bottom Export & Action Bar */}
+      <div
+        className={`p-4 border-t flex flex-wrap items-center justify-between gap-3 ${
+          isNightMode ? 'border-[#EDEDED]/10' : 'border-[#1A1A1A]/10'
+        }`}
+      >
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={handleDownloadPDF}
             disabled={isExporting}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] bg-[#141828] text-white hover:bg-[#1D233A] hover:text-emerald-400 transition-all text-[11px] font-medium border border-[#1E253E] cursor-pointer"
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-[6px] transition-colors duration-150 text-[12px] font-medium border cursor-pointer ${
+              isNightMode
+                ? 'bg-[#0B0B0C] text-[#EDEDED] hover:bg-[#1C1C1F] border-[#EDEDED]/10'
+                : 'bg-[#FAFAF7] text-[#1A1A1A] hover:bg-[#E8E6DF] border-[#1A1A1A]/10'
+            }`}
           >
-            <Download className="w-3.5 h-3.5 text-emerald-400" />
-            <span>PDF Guide</span>
+            <Download className="w-3.5 h-3.5" strokeWidth={1.5} />
+            <span>PDF</span>
           </button>
 
-          {/* Word / DOCX */}
           <button
             type="button"
             onClick={handleDownloadDOCX}
             disabled={isExporting}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] bg-[#141828] text-white hover:bg-[#1D233A] hover:text-indigo-400 transition-all text-[11px] font-medium border border-[#1E253E] cursor-pointer"
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-[6px] transition-colors duration-150 text-[12px] font-medium border cursor-pointer ${
+              isNightMode
+                ? 'bg-[#0B0B0C] text-[#EDEDED] hover:bg-[#1C1C1F] border-[#EDEDED]/10'
+                : 'bg-[#FAFAF7] text-[#1A1A1A] hover:bg-[#E8E6DF] border-[#1A1A1A]/10'
+            }`}
           >
-            <FileType className="w-3.5 h-3.5 text-indigo-400" />
+            <FileType className="w-3.5 h-3.5" strokeWidth={1.5} />
             <span>DOCX</span>
           </button>
 
-          {/* Markdown */}
           <button
             type="button"
             onClick={handleDownloadMD}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] bg-[#141828] text-white hover:bg-[#1D233A] hover:text-amber-400 transition-all text-[11px] font-medium border border-[#1E253E] cursor-pointer"
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-[6px] transition-colors duration-150 text-[12px] font-medium border cursor-pointer ${
+              isNightMode
+                ? 'bg-[#0B0B0C] text-[#EDEDED] hover:bg-[#1C1C1F] border-[#EDEDED]/10'
+                : 'bg-[#FAFAF7] text-[#1A1A1A] hover:bg-[#E8E6DF] border-[#1A1A1A]/10'
+            }`}
           >
-            <FileCode className="w-3.5 h-3.5 text-amber-400" />
+            <FileCode className="w-3.5 h-3.5" strokeWidth={1.5} />
             <span>Markdown</span>
           </button>
 
-          {/* TXT */}
           <button
             type="button"
             onClick={handleDownloadTXT}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] bg-[#141828] text-white hover:bg-[#1D233A] hover:text-teal-400 transition-all text-[11px] font-medium border border-[#1E253E] cursor-pointer"
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-[6px] transition-colors duration-150 text-[12px] font-medium border cursor-pointer ${
+              isNightMode
+                ? 'bg-[#0B0B0C] text-[#EDEDED] hover:bg-[#1C1C1F] border-[#EDEDED]/10'
+                : 'bg-[#FAFAF7] text-[#1A1A1A] hover:bg-[#E8E6DF] border-[#1A1A1A]/10'
+            }`}
           >
-            <FileText className="w-3.5 h-3.5 text-teal-400" />
+            <FileText className="w-3.5 h-3.5" strokeWidth={1.5} />
             <span>TXT</span>
           </button>
 
-          {/* Share */}
           <button
             type="button"
             onClick={handleShare}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] bg-[#141828] text-white hover:bg-[#1D233A] hover:text-indigo-300 transition-all text-[11px] font-medium border border-[#1E253E] cursor-pointer"
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-[6px] transition-colors duration-150 text-[12px] font-medium border cursor-pointer ${
+              isNightMode
+                ? 'bg-[#0B0B0C] text-[#EDEDED] hover:bg-[#1C1C1F] border-[#EDEDED]/10'
+                : 'bg-[#FAFAF7] text-[#1A1A1A] hover:bg-[#E8E6DF] border-[#1A1A1A]/10'
+            }`}
           >
-            <Share2 className="w-3.5 h-3.5 text-indigo-300" />
-            <span>Share Link</span>
+            <Share2 className="w-3.5 h-3.5" strokeWidth={1.5} />
+            <span>Share link</span>
           </button>
         </div>
 
-        {/* Timed Mode Button matching screenshot */}
         <button
           type="button"
           onClick={onStartTimedQuiz}
-          className="flex items-center gap-2 px-4 py-2 rounded-[9px] bg-gradient-to-r from-indigo-600 via-indigo-500 to-[#7C3AED] text-white text-[12px] font-semibold hover:opacity-95 active:scale-95 transition-all shadow-md shadow-indigo-950/50 cursor-pointer shrink-0"
+          className="flex items-center gap-2 px-3.5 py-1.5 rounded-[6px] bg-[#2D4A3E] hover:bg-[#375A4B] text-[#EDEDED] text-[13px] font-medium transition-colors duration-150 cursor-pointer shrink-0"
         >
-          <Clock className="w-4 h-4" />
-          <span>Test in Timed Mode</span>
+          <Clock className="w-4 h-4" strokeWidth={1.5} />
+          <span>Timed mode</span>
         </button>
       </div>
     </div>

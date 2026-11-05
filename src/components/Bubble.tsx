@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bot, FileText, CheckCheck, Camera, FileCode } from 'lucide-react';
+import { BookOpen, FileText, CheckCheck, Camera } from 'lucide-react';
 
 export interface FileAttachment {
   name: string;
@@ -31,36 +31,38 @@ export const Bubble: React.FC<BubbleProps> = ({
 }) => {
   if (sender === 'user') {
     return (
-      <div className="flex justify-end w-full group animate-in fade-in">
+      <div className="flex justify-end w-full">
         <div className="max-w-[90%] sm:max-w-[80%] space-y-2">
-          {/* File attachments badge if present */}
+          {/* File attachments */}
           {attachments && attachments.length > 0 && (
             <div className="flex flex-wrap items-center justify-end gap-2">
               {attachments.map((file, idx) => (
                 <div
                   key={idx}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-[10px] border text-[12px] shadow-xs ${
+                  className={`flex items-center gap-2.5 px-3 py-2 rounded-[6px] border text-[13px] ${
                     isNightMode
-                      ? 'bg-[#141828] border-[#1E253E] text-white'
-                      : 'bg-white border-slate-300 text-slate-800 shadow-slate-100'
+                      ? 'bg-[#141416] border-[#EDEDED]/10 text-[#EDEDED]'
+                      : 'bg-[#F2F1EC] border-[#1A1A1A]/10 text-[#1A1A1A]'
                   }`}
                 >
                   {file.type === 'image' ? (
-                    <div className="w-6 h-6 rounded bg-emerald-500/20 text-emerald-500 flex items-center justify-center shrink-0">
-                      <Camera className="w-3.5 h-3.5" />
-                    </div>
+                    <Camera className="w-4 h-4 shrink-0" strokeWidth={1.5} />
                   ) : (
-                    <div className="w-6 h-6 rounded bg-indigo-500/20 text-indigo-500 flex items-center justify-center shrink-0">
-                      <FileText className="w-3.5 h-3.5" />
-                    </div>
+                    <FileText className="w-4 h-4 shrink-0" strokeWidth={1.5} />
                   )}
 
                   <div className="flex flex-col text-left">
-                    <span className="font-semibold text-[12px] truncate max-w-[180px]">
+                    <span className="font-medium text-[13px] truncate max-w-[200px]">
                       {file.name}
                     </span>
-                    <span className="text-[10px] text-[#737A8C]">
-                      {file.ocrAccuracy ? `✓ ${file.ocrAccuracy} OCR accuracy` : `${file.size || 'Attached'} • ${file.pages || 'Document'}`}
+                    <span
+                      className={`text-[12px] ${
+                        isNightMode ? 'text-[#8A8A8A]' : 'text-[#6B6B6B]'
+                      }`}
+                    >
+                      {file.ocrAccuracy
+                        ? `${file.ocrAccuracy} OCR accuracy`
+                        : `${file.size || 'Attached'} · ${file.pages || 'Document'}`}
                     </span>
                   </div>
                 </div>
@@ -68,22 +70,26 @@ export const Bubble: React.FC<BubbleProps> = ({
             </div>
           )}
 
-          {/* User Message Bubble */}
+          {/* User Message */}
           <div
-            className={`rounded-[18px] rounded-tr-[4px] px-4 py-3 text-[14px] sm:text-[15px] leading-relaxed shadow-md border ${
+            className={`rounded-[6px] px-4 py-3 text-[15px] leading-[1.6] ${
               isNightMode
-                ? 'bg-[#141724] border-[#22273B] text-[#FCFCFC]'
-                : 'bg-indigo-600 border-indigo-700 text-white'
+                ? 'bg-[#141416] text-[#EDEDED]'
+                : 'bg-[#F2F1EC] text-[#1A1A1A]'
             }`}
           >
             {children}
           </div>
 
-          {/* Timestamp with double check mark */}
+          {/* Timestamp */}
           {timestamp && (
-            <div className="text-[10px] text-[#737A8C] text-right pr-2 flex items-center justify-end gap-1">
+            <div
+              className={`text-[12px] text-right pr-1 flex items-center justify-end gap-1 ${
+                isNightMode ? 'text-[#8A8A8A]' : 'text-[#6B6B6B]'
+              }`}
+            >
               <span>{timestamp}</span>
-              <CheckCheck className={`w-3 h-3 ${isNightMode ? 'text-indigo-400' : 'text-indigo-600'}`} />
+              <CheckCheck className="w-3.5 h-3.5" strokeWidth={1.5} />
             </div>
           )}
         </div>
@@ -91,23 +97,26 @@ export const Bubble: React.FC<BubbleProps> = ({
     );
   }
 
-  // Assistant Bubble
+  // Assistant Message
   return (
-    <div className="flex items-start gap-3 w-full group animate-in fade-in">
-      {/* Bot Icon */}
+    <div className="flex items-start gap-3 w-full">
       <div
-        className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#344CE4] to-[#14AC8C] text-white flex items-center justify-center shrink-0 mt-0.5 shadow-md shadow-indigo-500/20"
+        className={`w-7 h-7 rounded-[6px] flex items-center justify-center shrink-0 mt-0.5 border ${
+          isNightMode
+            ? 'bg-[#141416] border-[#EDEDED]/10 text-[#EDEDED]'
+            : 'bg-[#F2F1EC] border-[#1A1A1A]/10 text-[#1A1A1A]'
+        }`}
         aria-hidden="true"
       >
-        <Bot className="w-4 h-4 text-white" />
+        <BookOpen className="w-4 h-4" strokeWidth={1.5} />
       </div>
 
       <div className="flex-1 max-w-[94%] sm:max-w-[88%] space-y-2">
         <div
-          className={`rounded-[18px] rounded-tl-[4px] px-4 py-3.5 text-[14px] sm:text-[15px] leading-relaxed shadow-sm border ${
+          className={`rounded-[6px] px-4 py-3 text-[15px] leading-[1.6] ${
             isNightMode
-              ? 'bg-[#111420] border-[#1D2235] text-[#FCFCFC]'
-              : 'bg-white border-slate-200 text-slate-800'
+              ? 'bg-[#141416] text-[#EDEDED]'
+              : 'bg-[#F2F1EC] text-[#1A1A1A]'
           }`}
         >
           {children}
@@ -115,16 +124,16 @@ export const Bubble: React.FC<BubbleProps> = ({
 
         {/* Action chips */}
         {actionChips && actionChips.length > 0 && (
-          <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+          <div className="flex flex-wrap items-center gap-2 pt-0.5">
             {actionChips.map((chip, idx) => (
               <button
                 key={idx}
                 type="button"
                 onClick={chip.onClick}
-                className={`text-[11px] font-semibold px-3 py-1 rounded-full transition-all border cursor-pointer ${
+                className={`text-[12px] font-medium px-2.5 py-1 rounded-[6px] transition-colors duration-150 border cursor-pointer ${
                   isNightMode
-                    ? 'text-indigo-300 bg-[#141828] hover:bg-[#1A2035] border-[#1E253E] hover:border-indigo-500/40'
-                    : 'text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border-indigo-200'
+                    ? 'text-[#EDEDED] bg-[#141416] hover:bg-[#1C1C1F] border-[#EDEDED]/10'
+                    : 'text-[#1A1A1A] bg-[#F2F1EC] hover:bg-[#E8E6DF] border-[#1A1A1A]/10'
                 }`}
               >
                 {chip.label}
@@ -134,7 +143,11 @@ export const Bubble: React.FC<BubbleProps> = ({
         )}
 
         {timestamp && (
-          <div className="text-[10px] text-[#737A8C] pl-1">
+          <div
+            className={`text-[12px] pl-1 ${
+              isNightMode ? 'text-[#8A8A8A]' : 'text-[#6B6B6B]'
+            }`}
+          >
             {timestamp}
           </div>
         )}

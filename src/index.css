@@ -2,55 +2,64 @@
 
 @layer base {
   :root {
-    --bg-onyx: #0A0A0A;
-    --surface-elevated: #141414;
-    --surface-muted: #1F1F1F;
-    --accent-teal: #14AC8C;
-    --accent-blue: #344CE4;
-    --accent-amber: #FFD166;
-    --text-primary: #FCFCFC;
-    --text-secondary: #A1A1A1;
-    --text-on-accent: #111111;
+    --bg-primary: #0B0B0C;
+    --bg-elevated: #141416;
+    --bg-muted: #1C1C1F;
+    --text-primary: #EDEDED;
+    --text-secondary: #8A8A8A;
+    --accent-forest: #2D4A3E;
+    --accent-forest-hover: #375A4B;
+    --divider: rgba(237, 237, 237, 0.1);
+  }
+
+  .light {
+    --bg-primary: #FAFAF7;
+    --bg-elevated: #F2F1EC;
+    --bg-muted: #E8E6DF;
+    --text-primary: #1A1A1A;
+    --text-secondary: #6B6B6B;
+    --accent-forest: #2D4A3E;
+    --accent-forest-hover: #233B31;
+    --divider: rgba(26, 26, 26, 0.1);
   }
 
   body {
-    background-color: var(--bg-onyx);
+    background-color: var(--bg-primary);
     color: var(--text-primary);
-    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     font-size: 15px;
-    line-height: 1.5;
+    font-weight: 400;
+    line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;
   }
 
-  /* Focus visible accessibility outline in teal */
   *:focus-visible {
-    outline: 2px solid var(--accent-teal);
+    outline: 2px solid var(--accent-forest);
     outline-offset: 2px;
   }
 }
 
-/* Custom subtle scrollbar */
+/* Restrained scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0A0A0A;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1F1F1F;
-  border-radius: 9999px;
+  background: rgba(138, 138, 138, 0.25);
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #2a2a2a;
+  background: rgba(138, 138, 138, 0.4);
 }
 
-/* Reduced motion preference support */
 @media (prefers-reduced-motion: reduce) {
   *,
   ::before,

@@ -1,12 +1,9 @@
 import React, { useRef, useEffect } from 'react';
 import {
-  Camera,
   Paperclip,
   ArrowUp,
   Loader2,
   Image as ImageIcon,
-  Zap,
-  Sparkles,
   FileText,
   X,
   FileCode,
@@ -48,7 +45,6 @@ export const InputDock: React.FC<InputDockProps> = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Auto-grow textarea height
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
@@ -82,7 +78,6 @@ export const InputDock: React.FC<InputDockProps> = ({
     }
   };
 
-  // Format file size
   const formatSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -92,15 +87,14 @@ export const InputDock: React.FC<InputDockProps> = ({
   const getFileIcon = (fileName: string) => {
     const ext = fileName.split('.').pop()?.toLowerCase();
     if (['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext || '')) {
-      return <ImageIcon className="w-3.5 h-3.5 text-emerald-400" />;
+      return <ImageIcon className="w-3.5 h-3.5 shrink-0" strokeWidth={1.5} />;
     }
     if (['txt', 'md'].includes(ext || '')) {
-      return <FileCode className="w-3.5 h-3.5 text-amber-400" />;
+      return <FileCode className="w-3.5 h-3.5 shrink-0" strokeWidth={1.5} />;
     }
-    return <FileText className="w-3.5 h-3.5 text-indigo-400" />;
+    return <FileText className="w-3.5 h-3.5 shrink-0" strokeWidth={1.5} />;
   };
 
-  // Suggestions
   const suggestions = [
     {
       label: 'Suggest 5 tough exam questions',
@@ -115,22 +109,22 @@ export const InputDock: React.FC<InputDockProps> = ({
       prompt: 'Synthesize these notes into an ultra-dense 1-page exam cheat sheet with key formulas, tables, and definitions.',
     },
     {
-      label: '🇵🇰 Roman Urdu summary',
+      label: 'Roman Urdu summary',
       prompt: 'In notes ka khulasa aasan Roman Urdu me samjha dain taake midterm exam ki teyari ho sakay.',
     },
   ];
 
   return (
     <footer
-      className={`w-full p-3 sm:p-4 shrink-0 transition-opacity select-none ${
+      className={`w-full px-4 sm:px-6 py-3 shrink-0 select-none border-t ${
         isNightMode
-          ? 'bg-gradient-to-t from-[#08090F] via-[#090B12] to-transparent'
-          : 'bg-gradient-to-t from-slate-100 via-slate-50 to-transparent'
+          ? 'bg-[#0B0B0C] border-[#EDEDED]/10'
+          : 'bg-[#FAFAF7] border-[#1A1A1A]/10'
       }`}
     >
-      <div className="max-w-[760px] mx-auto w-full space-y-2">
-        {/* Suggestion Chips Row */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none text-[11px]">
+      <div className="max-w-[740px] mx-auto w-full space-y-2.5">
+        {/* Suggestion Row */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-0.5 text-[12px]">
           {suggestions.map((s, idx) => (
             <button
               key={idx}
@@ -142,62 +136,62 @@ export const InputDock: React.FC<InputDockProps> = ({
                   onChange(s.prompt);
                 }
               }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all shrink-0 cursor-pointer active:scale-95 shadow-xs ${
+              className={`px-2.5 py-1 rounded-[6px] border transition-colors duration-150 shrink-0 cursor-pointer ${
                 isNightMode
-                  ? 'bg-[#121626] hover:bg-[#181E32] text-[#A1A1A1] hover:text-[#FCFCFC] border-[#1E253E]'
-                  : 'bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 border-slate-200'
+                  ? 'bg-[#141416] hover:bg-[#1C1C1F] text-[#8A8A8A] hover:text-[#EDEDED] border-[#EDEDED]/10'
+                  : 'bg-[#F2F1EC] hover:bg-[#E8E6DF] text-[#6B6B6B] hover:text-[#1A1A1A] border-[#1A1A1A]/10'
               }`}
             >
-              <Sparkles className="w-3 h-3 text-indigo-500" />
-              <span>{s.label}</span>
+              {s.label}
             </button>
           ))}
         </div>
 
-        {/* Input Dock Container */}
+        {/* Input Container */}
         <div
-          className={`rounded-[16px] border p-2 sm:p-2.5 transition-all shadow-xl ${
+          className={`rounded-[6px] border p-2.5 transition-colors duration-150 ${
             isNightMode
-              ? 'bg-[#101320] border-[#1E253D]'
-              : 'bg-white border-slate-300 shadow-slate-200'
-          } ${
-            disabled
-              ? 'opacity-60 pointer-events-none'
-              : 'focus-within:border-indigo-500/80 focus-within:ring-1 focus-within:ring-indigo-500/30'
-          }`}
+              ? 'bg-[#141416] border-[#EDEDED]/15 focus-within:border-[#2D4A3E]'
+              : 'bg-[#F2F1EC] border-[#1A1A1A]/15 focus-within:border-[#2D4A3E]'
+          } ${disabled ? 'opacity-60 pointer-events-none' : ''}`}
         >
-          {/* Attached Files Stays in Input Bar (User can add text or more files before sending) */}
+          {/* Attached Files */}
           {attachedFiles.length > 0 && (
-            <div className="flex flex-wrap items-center gap-2 pb-2 mb-2 border-b border-indigo-500/20">
+            <div
+              className={`flex flex-wrap items-center gap-2 pb-2 mb-2 border-b ${
+                isNightMode ? 'border-[#EDEDED]/10' : 'border-[#1A1A1A]/10'
+              }`}
+            >
               {attachedFiles.map((file, idx) => (
                 <div
                   key={idx}
-                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-[8px] border text-[11px] animate-in fade-in ${
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] border text-[12px] ${
                     isNightMode
-                      ? 'bg-[#161B2E] border-[#222B48] text-[#E2E8F0]'
-                      : 'bg-slate-100 border-slate-300 text-slate-800'
+                      ? 'bg-[#0B0B0C] border-[#EDEDED]/10 text-[#EDEDED]'
+                      : 'bg-[#FAFAF7] border-[#1A1A1A]/10 text-[#1A1A1A]'
                   }`}
                 >
                   {getFileIcon(file.name)}
-                  <span className="font-medium truncate max-w-[150px] sm:max-w-[200px]">
+                  <span className="font-medium truncate max-w-[160px] sm:max-w-[200px]">
                     {file.name}
                   </span>
-                  <span className="text-[10px] text-[#788195]">
+                  <span className={isNightMode ? 'text-[#8A8A8A]' : 'text-[#6B6B6B]'}>
                     ({formatSize(file.size)})
                   </span>
                   <button
                     type="button"
                     onClick={() => onRemoveFile(idx)}
                     title="Remove file"
-                    className="p-0.5 rounded hover:bg-black/20 text-[#A1A1A1] hover:text-rose-400 cursor-pointer ml-0.5"
+                    className={`p-0.5 rounded-[4px] cursor-pointer ml-0.5 transition-colors duration-150 ${
+                      isNightMode
+                        ? 'text-[#8A8A8A] hover:text-[#EDEDED]'
+                        : 'text-[#6B6B6B] hover:text-[#1A1A1A]'
+                    }`}
                   >
-                    <X className="w-3 h-3" />
+                    <X className="w-3.5 h-3.5" strokeWidth={1.5} />
                   </button>
                 </div>
               ))}
-              <span className="text-[10px] text-indigo-400 font-mono">
-                {attachedFiles.length} {attachedFiles.length === 1 ? 'file' : 'files'} attached • Add notes or click Send
-              </span>
             </div>
           )}
 
@@ -213,60 +207,60 @@ export const InputDock: React.FC<InputDockProps> = ({
               isParsingFile
                 ? 'Extracting notes from attached document…'
                 : attachedFiles.length > 0
-                ? 'Add any additional notes or instructions for these files (optional)…'
+                ? 'Add notes or instructions for these files (optional)…'
                 : disabledReason || placeholder
             }
-            className={`w-full bg-transparent text-[14px] resize-none outline-none px-2 py-1.5 max-h-[130px] leading-relaxed ${
+            className={`w-full bg-transparent text-[15px] resize-none outline-none px-1.5 py-1 max-h-[130px] leading-[1.6] ${
               isNightMode
-                ? 'text-[#FCFCFC] placeholder-[#737A8C]'
-                : 'text-slate-900 placeholder-slate-400'
+                ? 'text-[#EDEDED] placeholder-[#8A8A8A]'
+                : 'text-[#1A1A1A] placeholder-[#6B6B6B]'
             }`}
           />
 
           {/* Bottom Dock Control Bar */}
           <div
-            className={`flex items-center justify-between pt-1 gap-2 border-t ${
-              isNightMode ? 'border-[#161B2B]' : 'border-slate-100'
+            className={`flex items-center justify-between pt-2 gap-2 border-t ${
+              isNightMode ? 'border-[#EDEDED]/10' : 'border-[#1A1A1A]/10'
             }`}
           >
-            {/* Left Action Buttons: Paperclip + Camera (Microphone removed as requested) */}
+            {/* Left Action Buttons: Paperclip + Camera */}
             <div className="flex items-center gap-1">
-              {/* Paperclip (Multi-file support) */}
               <button
                 type="button"
                 onClick={triggerFileInput}
                 disabled={disabled || isParsingFile}
                 title="Attach study files (.pdf, .docx, .txt, .md)"
-                className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${
+                aria-label="Attach study files"
+                className={`p-1.5 rounded-[6px] flex items-center justify-center transition-colors duration-150 cursor-pointer ${
                   isNightMode
-                    ? 'text-[#A1A1A1] hover:text-[#FCFCFC] hover:bg-[#181E30]'
-                    : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'
+                    ? 'text-[#8A8A8A] hover:text-[#EDEDED] hover:bg-[#1C1C1F]'
+                    : 'text-[#6B6B6B] hover:text-[#1A1A1A] hover:bg-[#E8E6DF]'
                 }`}
               >
                 {isParsingFile ? (
-                  <Loader2 className="w-4 h-4 text-indigo-500 animate-spin" />
+                  <Loader2 className="w-4 h-4 animate-spin" strokeWidth={1.5} />
                 ) : (
-                  <Paperclip className="w-4 h-4" />
+                  <Paperclip className="w-4 h-4" strokeWidth={1.5} />
                 )}
               </button>
 
-              {/* Photo / Camera */}
               <button
                 type="button"
                 onClick={onOpenCamera}
                 disabled={disabled || isParsingFile}
-                title="Scan handwritten notes / upload photo"
-                className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${
+                title="Scan handwritten notes"
+                aria-label="Scan handwritten notes"
+                className={`p-1.5 rounded-[6px] flex items-center justify-center transition-colors duration-150 cursor-pointer ${
                   isNightMode
-                    ? 'text-[#A1A1A1] hover:text-[#FCFCFC] hover:bg-[#181E30]'
-                    : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'
+                    ? 'text-[#8A8A8A] hover:text-[#EDEDED] hover:bg-[#1C1C1F]'
+                    : 'text-[#6B6B6B] hover:text-[#1A1A1A] hover:bg-[#E8E6DF]'
                 }`}
               >
-                <ImageIcon className="w-4 h-4 text-[#14AC8C]" />
+                <ImageIcon className="w-4 h-4" strokeWidth={1.5} />
               </button>
             </div>
 
-            {/* Hidden File Input with multiple attribute */}
+            {/* Hidden File Input */}
             <input
               ref={fileInputRef}
               type="file"
@@ -277,47 +271,34 @@ export const InputDock: React.FC<InputDockProps> = ({
               aria-hidden="true"
             />
 
-            {/* Right: Model Badge + Send Button */}
-            <div className="flex items-center gap-2">
-              <div
-                className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono border ${
-                  isNightMode
-                    ? 'bg-[#151929] border-[#202740] text-indigo-300'
-                    : 'bg-indigo-50 border-indigo-200 text-indigo-700'
+            {/* Right: Model Label + Send Button */}
+            <div className="flex items-center gap-3">
+              <span
+                className={`hidden sm:inline text-[12px] ${
+                  isNightMode ? 'text-[#8A8A8A]' : 'text-[#6B6B6B]'
                 }`}
               >
-                <Zap className="w-3 h-3 text-indigo-500 fill-indigo-500" />
-                <span>{selectedModel}</span>
-              </div>
+                {selectedModel}
+              </span>
 
-              {/* Send Button */}
               <button
                 type="button"
                 onClick={onSend}
                 disabled={!canSend}
                 aria-label="Send message"
-                className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                className={`w-8 h-8 rounded-[6px] flex items-center justify-center transition-colors duration-150 ${
                   canSend
-                    ? 'bg-gradient-to-tr from-[#344CE4] to-[#6366F1] text-white hover:opacity-95 shadow-md shadow-indigo-950/50 cursor-pointer active:scale-95'
+                    ? 'bg-[#2D4A3E] hover:bg-[#375A4B] text-[#EDEDED] cursor-pointer'
                     : isNightMode
-                    ? 'bg-[#181E30] text-[#525866] cursor-not-allowed'
-                    : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                    ? 'bg-[#1C1C1F] text-[#8A8A8A]/50 cursor-not-allowed'
+                    : 'bg-[#E8E6DF] text-[#6B6B6B]/50 cursor-not-allowed'
                 }`}
               >
-                <ArrowUp className="w-4 h-4 stroke-[2.5]" />
+                <ArrowUp className="w-4 h-4" strokeWidth={1.5} />
               </button>
             </div>
           </div>
         </div>
-
-        {/* Academic synthesis disclaimer */}
-        <p
-          className={`text-[10px] text-center tracking-tight ${
-            isNightMode ? 'text-[#525866]' : 'text-slate-500'
-          }`}
-        >
-          Notes2Quiz academic synthesis • Citations verified against university textbooks & syllabus
-        </p>
       </div>
     </footer>
   );

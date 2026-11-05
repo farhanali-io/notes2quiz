@@ -4,9 +4,10 @@ import { RotateCw, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react'
 
 interface FlashcardProps {
   cards: FlashcardItem[];
+  isNightMode?: boolean;
 }
 
-export const Flashcard: React.FC<FlashcardProps> = ({ cards }) => {
+export const Flashcard: React.FC<FlashcardProps> = ({ cards, isNightMode = true }) => {
   const [currentIdx, setCurrentIdx] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [masteredIds, setMasteredIds] = useState<Record<string, boolean>>({});
@@ -38,8 +39,8 @@ export const Flashcard: React.FC<FlashcardProps> = ({ cards }) => {
   };
 
   return (
-    <div className="space-y-3">
-      {/* Flashcard container with flip interaction */}
+    <div className="space-y-4">
+      {/* Flashcard surface (0px radius on card) */}
       <div
         onClick={toggleFlip}
         role="button"
@@ -51,58 +52,74 @@ export const Flashcard: React.FC<FlashcardProps> = ({ cards }) => {
           }
         }}
         aria-label="Flashcard. Press to flip."
-        className="group relative min-h-[170px] sm:min-h-[190px] rounded-[10px] bg-[#1A1A1A] border border-[#262626] hover:border-[#14AC8C]/50 p-5 flex flex-col justify-between cursor-pointer transition-all duration-200 select-none"
+        className={`group relative min-h-[176px] rounded-none border p-5 flex flex-col justify-between cursor-pointer transition-colors duration-150 select-none ${
+          isNightMode
+            ? 'bg-[#0B0B0C] border-[#EDEDED]/10 hover:bg-[#1C1C1F]/60 text-[#EDEDED]'
+            : 'bg-[#FAFAF7] border-[#1A1A1A]/10 hover:bg-[#E8E6DF]/60 text-[#1A1A1A]'
+        }`}
       >
-        <div className="flex items-center justify-between text-[11px] text-[#A1A1A1]">
-          <span className="uppercase tracking-wider font-semibold text-[#14AC8C]">
+        <div
+          className={`flex items-center justify-between text-[12px] ${
+            isNightMode ? 'text-[#8A8A8A]' : 'text-[#6B6B6B]'
+          }`}
+        >
+          <span className="font-medium">
             {isFlipped ? 'Answer' : 'Question'}
             {currentCard.keyTerm ? ` · ${currentCard.keyTerm}` : ''}
           </span>
-          <span className="text-[12px] font-mono">
+          <span>
             {currentIdx + 1} / {cards.length}
           </span>
         </div>
 
-        <div className="my-auto py-3 text-center sm:text-left">
-          {isFlipped ? (
-            <p className="text-[15px] sm:text-[16px] text-[#FCFCFC] leading-relaxed">
-              {currentCard.back}
-            </p>
-          ) : (
-            <p className="text-[15px] sm:text-[16px] font-medium text-[#FCFCFC] leading-relaxed">
-              {currentCard.front}
-            </p>
-          )}
+        <div className="my-auto py-4 text-center sm:text-left">
+          <p className="text-[16px] font-medium leading-[1.6]">
+            {isFlipped ? currentCard.back : currentCard.front}
+          </p>
         </div>
 
-        <div className="flex items-center justify-between pt-2 border-t border-[#262626] text-[11px] text-[#A1A1A1]">
-          <span className="flex items-center gap-1 group-hover:text-[#14AC8C] transition-colors">
-            <RotateCw className="w-3.5 h-3.5" />
-            <span>Tap card to flip</span>
+        <div
+          className={`flex items-center justify-between pt-3 border-t text-[12px] ${
+            isNightMode
+              ? 'border-[#EDEDED]/10 text-[#8A8A8A]'
+              : 'border-[#1A1A1A]/10 text-[#6B6B6B]'
+          }`}
+        >
+          <span className="flex items-center gap-1.5">
+            <RotateCw className="w-3.5 h-3.5" strokeWidth={1.5} />
+            <span>Click to flip</span>
           </span>
 
           <button
+            type="button"
             onClick={toggleMastered}
-            className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] transition-colors ${
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] text-[12px] font-medium transition-colors duration-150 cursor-pointer ${
               masteredIds[currentCard.id]
-                ? 'bg-[#14AC8C]/20 text-[#14AC8C]'
-                : 'hover:text-[#FCFCFC]'
+                ? 'bg-[#2D4A3E] text-[#EDEDED]'
+                : isNightMode
+                ? 'hover:text-[#EDEDED]'
+                : 'hover:text-[#1A1A1A]'
             }`}
           >
-            <CheckCircle2 className="w-3 h-3" />
-            <span>{masteredIds[currentCard.id] ? 'Mastered' : 'Mark Mastered'}</span>
+            <CheckCircle2 className="w-3.5 h-3.5" strokeWidth={1.5} />
+            <span>{masteredIds[currentCard.id] ? 'Mastered' : 'Mark mastered'}</span>
           </button>
         </div>
       </div>
 
       {/* Navigation controls */}
-      <div className="flex items-center justify-between px-1">
+      <div className="flex items-center justify-between">
         <button
+          type="button"
           onClick={handlePrev}
           aria-label="Previous flashcard"
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#1F1F1F] text-[#FCFCFC] text-[12px] font-medium hover:bg-[#2A2A2A] transition-colors min-h-[36px]"
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[6px] text-[13px] font-medium transition-colors duration-150 cursor-pointer ${
+            isNightMode
+              ? 'bg-[#0B0B0C] text-[#EDEDED] hover:bg-[#1C1C1F]'
+              : 'bg-[#FAFAF7] text-[#1A1A1A] hover:bg-[#E8E6DF]'
+          }`}
         >
-          <ChevronLeft className="w-4 h-4" />
+          <ChevronLeft className="w-4 h-4" strokeWidth={1.5} />
           <span>Previous</span>
         </button>
 
@@ -110,29 +127,37 @@ export const Flashcard: React.FC<FlashcardProps> = ({ cards }) => {
           {cards.map((card, idx) => (
             <button
               key={card.id}
+              type="button"
               onClick={() => {
                 setIsFlipped(false);
                 setCurrentIdx(idx);
               }}
               aria-label={`Jump to card ${idx + 1}`}
-              className={`w-2 h-2 rounded-full transition-all ${
+              className={`h-1.5 rounded-[2px] transition-colors duration-150 cursor-pointer ${
                 idx === currentIdx
-                  ? 'w-5 bg-[#14AC8C]'
+                  ? 'w-4 bg-[#2D4A3E]'
                   : masteredIds[card.id]
-                  ? 'bg-[#14AC8C]/40'
-                  : 'bg-[#2A2A2A] hover:bg-[#3D3D3D]'
+                  ? 'w-1.5 bg-[#2D4A3E]/50'
+                  : isNightMode
+                  ? 'w-1.5 bg-[#EDEDED]/20 hover:bg-[#EDEDED]/40'
+                  : 'w-1.5 bg-[#1A1A1A]/20 hover:bg-[#1A1A1A]/40'
               }`}
             />
           ))}
         </div>
 
         <button
+          type="button"
           onClick={handleNext}
           aria-label="Next flashcard"
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#1F1F1F] text-[#FCFCFC] text-[12px] font-medium hover:bg-[#2A2A2A] transition-colors min-h-[36px]"
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[6px] text-[13px] font-medium transition-colors duration-150 cursor-pointer ${
+            isNightMode
+              ? 'bg-[#0B0B0C] text-[#EDEDED] hover:bg-[#1C1C1F]'
+              : 'bg-[#FAFAF7] text-[#1A1A1A] hover:bg-[#E8E6DF]'
+          }`}
         >
           <span>Next</span>
-          <ChevronRight className="w-4 h-4" />
+          <ChevronRight className="w-4 h-4" strokeWidth={1.5} />
         </button>
       </div>
     </div>

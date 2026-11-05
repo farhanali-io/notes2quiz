@@ -541,7 +541,7 @@ export default function App() {
               {
                 id: `err-chat-${Date.now()}`,
                 sender: 'assistant',
-                text: `⚠️ Could not get an answer: ${err.message || 'Connection error'}.`,
+                text: `Could not get an answer: ${err.message || 'Connection error'}.`,
                 timestamp: 'Just now',
               },
             ],
@@ -726,7 +726,7 @@ export default function App() {
             {
               id: `err-${Date.now()}`,
               sender: 'assistant',
-              text: `⚠️ Could not generate study pack: ${err.message || 'Network error'}. Please try again.`,
+              text: `Could not generate study pack: ${err.message || 'Network error'}. Please try again.`,
               timestamp: 'Just now',
             },
           ],
@@ -776,7 +776,7 @@ export default function App() {
   // Share session (copies link & summary)
   const handleShareSession = async () => {
     try {
-      const shareText = `Notes2Quiz — ${activeSession.title}\nStudy pack with university MCQs & Flashcards: ${window.location.href}`;
+      const shareText = `Notes2Quiz: ${activeSession.title}\nStudy pack with university MCQs & Flashcards: ${window.location.href}`;
       await navigator.clipboard.writeText(shareText);
       showAppToast('Study link & summary copied to clipboard!', 'success');
     } catch {
@@ -796,23 +796,23 @@ export default function App() {
   return (
     <div
       className={`h-screen w-screen flex overflow-hidden select-text relative font-sans transition-colors ${
-        isNightMode ? 'bg-[#0A0C14] text-[#FCFCFC] dark' : 'bg-[#F8FAFC] text-[#0F172A]'
+        isNightMode ? 'bg-[#0B0B0C] text-[#EDEDED] dark' : 'bg-[#FAFAF7] text-[#1A1A1A]'
       }`}
     >
       {/* Toast Notification */}
       {appToast && (
         <div
           role="status"
-          className={`fixed top-16 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-[12px] border shadow-2xl flex items-center gap-2.5 text-[13px] animate-in fade-in max-w-[90vw] ${
+          className={`fixed top-16 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-[6px] border shadow-[0_8px_24px_rgba(0,0,0,0.08)] flex items-center gap-2.5 text-[13px] max-w-[90vw] ${
             isNightMode
-              ? 'bg-[#121626] text-[#FCFCFC] border-indigo-500/60'
-              : 'bg-white text-slate-900 border-indigo-200'
+              ? 'bg-[#141416] text-[#EDEDED] border-[rgba(237,237,237,0.1)]'
+              : 'bg-[#F2F1EC] text-[#1A1A1A] border-[rgba(26,26,26,0.1)]'
           }`}
         >
           {appToast.type === 'success' ? (
-            <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+            <CheckCircle2 className="w-4 h-4 text-[#2D4A3E] shrink-0" strokeWidth={1.5} />
           ) : (
-            <AlertCircle className="w-4 h-4 text-[#FFD166] shrink-0" />
+            <AlertCircle className="w-4 h-4 text-[#8A8A8A] shrink-0" strokeWidth={1.5} />
           )}
           <span>{appToast.message}</span>
         </div>
@@ -845,7 +845,7 @@ export default function App() {
       {/* Main Workspace */}
       <div
         className={`flex-1 flex flex-col min-w-0 h-full overflow-hidden transition-colors ${
-          isNightMode ? 'bg-[#090B13]' : 'bg-[#F1F5F9]'
+          isNightMode ? 'bg-[#0B0B0C]' : 'bg-[#FAFAF7]'
         }`}
       >
         {/* Top Header: Hamburger & New Chat removed, theme toggle kept */}
@@ -921,6 +921,7 @@ export default function App() {
         questions={activeSession.studyPack?.mcqs || []}
         title={activeSession.title}
         durationMinutes={15}
+        isNightMode={isNightMode}
       />
 
       {/* Settings Modal with Cache Management */}
@@ -941,6 +942,7 @@ export default function App() {
         }
         onClearAllCache={handleClearAllCache}
         savedSessionsCount={sessions.length}
+        isNightMode={isNightMode}
       />
 
       {/* Camera Capture Modal */}

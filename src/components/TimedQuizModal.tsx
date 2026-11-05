@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, CheckCircle2, XCircle, AlertCircle, X, RotateCcw, Award } from 'lucide-react';
+import { Clock, X, RotateCcw, Award } from 'lucide-react';
 import { MCQItem } from '../types/studyPack';
 
 interface TimedQuizModalProps {
@@ -8,6 +8,7 @@ interface TimedQuizModalProps {
   questions: MCQItem[];
   title?: string;
   durationMinutes?: number;
+  isNightMode?: boolean;
 }
 
 export const TimedQuizModal: React.FC<TimedQuizModalProps> = ({
@@ -16,6 +17,7 @@ export const TimedQuizModal: React.FC<TimedQuizModalProps> = ({
   questions,
   title = 'BIO 301 Midterm Examination',
   durationMinutes = 15,
+  isNightMode = true,
 }) => {
   const [secondsLeft, setSecondsLeft] = useState(durationMinutes * 60);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -55,65 +57,90 @@ export const TimedQuizModal: React.FC<TimedQuizModalProps> = ({
     return {
       correct,
       total: questions.length,
-      percentage: Math.round((correct / questions.length) * 100),
+      percentage: questions.length > 0 ? Math.round((correct / questions.length) * 100) : 0,
     };
   };
 
   const score = calculateScore();
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 animate-in fade-in">
-      <div className="w-full max-w-2xl bg-[#0E111C] border border-[#1E253A] rounded-[16px] shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+    <div className="fixed inset-0 z-50 bg-[#0B0B0C]/80 flex items-center justify-center p-4">
+      <div
+        className={`w-full max-w-2xl border rounded-[6px] shadow-[0_8px_24px_rgba(0,0,0,0.08)] flex flex-col max-h-[90vh] overflow-hidden ${
+          isNightMode
+            ? 'bg-[#141416] border-[#EDEDED]/15 text-[#EDEDED]'
+            : 'bg-[#F2F1EC] border-[#1A1A1A]/15 text-[#1A1A1A]'
+        }`}
+      >
         {/* Header */}
-        <div className="p-4 border-b border-[#1A2033] flex items-center justify-between bg-[#121626]">
-          <div className="flex items-center gap-3">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-            <div>
-              <h3 className="font-bold text-[15px] text-white tracking-tight">{title}</h3>
-              <p className="text-[11px] text-[#A1A1A1]">Timed Exam Simulation</p>
-            </div>
+        <div
+          className={`p-4 border-b flex items-center justify-between ${
+            isNightMode ? 'border-[#EDEDED]/10' : 'border-[#1A1A1A]/10'
+          }`}
+        >
+          <div>
+            <h3 className="font-medium text-[15px] tracking-[-0.01em]">{title}</h3>
+            <p
+              className={`text-[12px] ${
+                isNightMode ? 'text-[#8A8A8A]' : 'text-[#6B6B6B]'
+              }`}
+            >
+              Timed exam simulation
+            </p>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             {!isSubmitted && (
               <div
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[13px] font-mono font-bold ${
-                  secondsLeft < 180
-                    ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40 animate-pulse'
-                    : 'bg-[#181E32] text-indigo-300 border border-[#263152]'
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] text-[13px] font-medium border ${
+                  isNightMode
+                    ? 'bg-[#0B0B0C] border-[#EDEDED]/10 text-[#EDEDED]'
+                    : 'bg-[#FAFAF7] border-[#1A1A1A]/10 text-[#1A1A1A]'
                 }`}
               >
-                <Clock className="w-4 h-4" />
+                <Clock className="w-4 h-4" strokeWidth={1.5} />
                 <span>{timeFormatted}</span>
               </div>
             )}
             <button
               type="button"
               onClick={onClose}
-              className="text-[#A1A1A1] hover:text-white p-1 rounded-lg"
+              aria-label="Close modal"
+              className={`p-1 rounded-[6px] transition-colors duration-150 cursor-pointer ${
+                isNightMode
+                  ? 'text-[#8A8A8A] hover:text-[#EDEDED]'
+                  : 'text-[#6B6B6B] hover:text-[#1A1A1A]'
+              }`}
             >
-              <X className="w-5 h-5" />
+              <X className="w-5 h-5" strokeWidth={1.5} />
             </button>
           </div>
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+        <div className="flex-1 overflow-y-auto p-5 space-y-5">
           {!isSubmitted ? (
             <>
-              {/* Question progress */}
-              <div className="flex items-center justify-between text-[11px] text-[#A1A1A1]">
-                <span>Question {currentIndex + 1} of {questions.length}</span>
+              <div
+                className={`flex items-center justify-between text-[12px] ${
+                  isNightMode ? 'text-[#8A8A8A]' : 'text-[#6B6B6B]'
+                }`}
+              >
+                <span>
+                  Question {currentIndex + 1} of {questions.length}
+                </span>
                 <span>{Object.keys(answers).length} answered</span>
               </div>
 
-              {/* Question */}
-              <div className="p-4 rounded-[12px] bg-[#141828] border border-[#1E253E] space-y-3">
-                <p className="text-[15px] font-semibold text-white leading-relaxed">
+              <div
+                className={`p-4 rounded-none space-y-3 ${
+                  isNightMode ? 'bg-[#0B0B0C]' : 'bg-[#FAFAF7]'
+                }`}
+              >
+                <p className="text-[15px] font-medium leading-[1.6]">
                   {currentQ.question}
                 </p>
 
-                {/* Options */}
                 <div className="space-y-2 pt-1">
                   {currentQ.options.map((opt, optIdx) => {
                     const isSelected = answers[currentIndex] === optIdx;
@@ -124,45 +151,57 @@ export const TimedQuizModal: React.FC<TimedQuizModalProps> = ({
                         onClick={() =>
                           setAnswers((prev) => ({ ...prev, [currentIndex]: optIdx }))
                         }
-                        className={`w-full text-left p-3 rounded-[8px] border text-[13px] font-medium flex items-center justify-between transition-all cursor-pointer ${
+                        className={`w-full text-left p-3 rounded-[6px] border text-[14px] flex items-center gap-3 transition-colors duration-150 cursor-pointer ${
                           isSelected
-                            ? 'bg-indigo-950/40 border-indigo-500 text-white shadow-sm'
-                            : 'bg-[#0E121E] border-[#1C2236] text-[#E2E8F0] hover:bg-[#161B2E]'
+                            ? 'bg-[#2D4A3E] border-[#2D4A3E] text-[#EDEDED]'
+                            : isNightMode
+                            ? 'bg-[#141416] border-[#EDEDED]/10 text-[#EDEDED] hover:bg-[#1C1C1F]'
+                            : 'bg-[#F2F1EC] border-[#1A1A1A]/10 text-[#1A1A1A] hover:bg-[#E8E6DF]'
                         }`}
                       >
-                        <div className="flex items-center gap-2.5">
-                          <span
-                            className={`w-6 h-6 rounded-md flex items-center justify-center text-[11px] font-bold ${
-                              isSelected
-                                ? 'bg-indigo-600 text-white'
-                                : 'bg-[#181E32] text-[#A1A1A1]'
-                            }`}
-                          >
-                            {String.fromCharCode(65 + optIdx)}
-                          </span>
-                          <span>{opt}</span>
-                        </div>
+                        <span
+                          className={`w-6 h-6 rounded-[4px] flex items-center justify-center text-[12px] font-medium shrink-0 ${
+                            isSelected
+                              ? 'bg-[#0B0B0C]/30 text-[#EDEDED]'
+                              : isNightMode
+                              ? 'bg-[#1C1C1F] text-[#8A8A8A]'
+                              : 'bg-[#E8E6DF] text-[#6B6B6B]'
+                          }`}
+                        >
+                          {String.fromCharCode(65 + optIdx)}
+                        </span>
+                        <span>{opt}</span>
                       </button>
                     );
                   })}
                 </div>
               </div>
 
-              {/* Question Grid Buttons */}
-              <div className="pt-2">
-                <span className="text-[11px] text-[#737A8C] block mb-1.5 font-medium">Jump to question:</span>
+              {/* Question Grid */}
+              <div className="pt-1">
+                <span
+                  className={`text-[12px] block mb-2 ${
+                    isNightMode ? 'text-[#8A8A8A]' : 'text-[#6B6B6B]'
+                  }`}
+                >
+                  Jump to question
+                </span>
                 <div className="flex flex-wrap gap-1.5">
                   {questions.map((_, idx) => (
                     <button
                       key={idx}
                       type="button"
                       onClick={() => setCurrentIndex(idx)}
-                      className={`w-7 h-7 rounded text-[11px] font-mono font-medium transition-all cursor-pointer ${
+                      className={`w-7 h-7 rounded-[6px] text-[12px] font-medium transition-colors duration-150 cursor-pointer border ${
                         idx === currentIndex
-                          ? 'bg-indigo-600 text-white ring-2 ring-indigo-400'
+                          ? 'bg-[#2D4A3E] border-[#2D4A3E] text-[#EDEDED]'
                           : answers[idx] !== undefined
-                          ? 'bg-emerald-950/60 text-emerald-300 border border-emerald-500/40'
-                          : 'bg-[#141828] text-[#737A8C] hover:text-white'
+                          ? isNightMode
+                            ? 'bg-[#1C1C1F] border-[#2D4A3E] text-[#EDEDED]'
+                            : 'bg-[#E8E6DF] border-[#2D4A3E] text-[#1A1A1A]'
+                          : isNightMode
+                          ? 'bg-[#0B0B0C] border-[#EDEDED]/10 text-[#8A8A8A] hover:text-[#EDEDED]'
+                          : 'bg-[#FAFAF7] border-[#1A1A1A]/10 text-[#6B6B6B] hover:text-[#1A1A1A]'
                       }`}
                     >
                       {idx + 1}
@@ -172,32 +211,46 @@ export const TimedQuizModal: React.FC<TimedQuizModalProps> = ({
               </div>
             </>
           ) : (
-            /* Results View */
-            <div className="text-center py-6 space-y-5 animate-in fade-in">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-indigo-500 to-emerald-400 mx-auto flex items-center justify-center text-white shadow-lg shadow-indigo-950/50">
-                <Award className="w-8 h-8" />
+            <div className="text-center py-6 space-y-5">
+              <div className="flex justify-center">
+                <Award className="w-8 h-8" strokeWidth={1.5} />
               </div>
 
               <div>
-                <h4 className="text-[20px] font-bold text-white">Quiz Completed!</h4>
-                <p className="text-[13px] text-[#A1A1A1]">Here is your academic performance breakdown:</p>
-              </div>
-
-              <div className="p-4 rounded-[12px] bg-[#141828] border border-[#1E253E] max-w-sm mx-auto space-y-2">
-                <div className="text-[32px] font-black text-emerald-400 font-mono">
-                  {score.percentage}%
-                </div>
-                <div className="text-[13px] text-[#FCFCFC]">
-                  {score.correct} Correct out of {score.total} Questions
-                </div>
-                <p className="text-[11px] text-indigo-300">
-                  {score.percentage >= 75
-                    ? '🎉 Excellent mastery! You are well-prepared for university exams.'
-                    : '💡 High-yield concepts need another revision pass.'}
+                <h4 className="text-[18px] font-medium tracking-[-0.01em]">
+                  Quiz completed
+                </h4>
+                <p
+                  className={`text-[13px] mt-1 ${
+                    isNightMode ? 'text-[#8A8A8A]' : 'text-[#6B6B6B]'
+                  }`}
+                >
+                  Academic performance summary
                 </p>
               </div>
 
-              {/* Review questions button */}
+              <div
+                className={`p-5 rounded-none max-w-sm mx-auto space-y-2 ${
+                  isNightMode ? 'bg-[#0B0B0C]' : 'bg-[#FAFAF7]'
+                }`}
+              >
+                <div className="text-[32px] font-semibold tracking-[-0.01em]">
+                  {score.percentage}%
+                </div>
+                <div className="text-[14px]">
+                  {score.correct} correct out of {score.total} questions
+                </div>
+                <p
+                  className={`text-[13px] ${
+                    isNightMode ? 'text-[#8A8A8A]' : 'text-[#6B6B6B]'
+                  }`}
+                >
+                  {score.percentage >= 75
+                    ? 'Strong mastery across tested concepts.'
+                    : 'Review the missed concepts and try again.'}
+                </p>
+              </div>
+
               <button
                 type="button"
                 onClick={() => {
@@ -206,24 +259,36 @@ export const TimedQuizModal: React.FC<TimedQuizModalProps> = ({
                   setSecondsLeft(durationMinutes * 60);
                   setCurrentIndex(0);
                 }}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#181E32] text-white hover:bg-[#202842] text-[13px] font-medium transition-colors cursor-pointer"
+                className={`inline-flex items-center gap-2 px-4 py-2 rounded-[6px] text-[13px] font-medium transition-colors duration-150 cursor-pointer border ${
+                  isNightMode
+                    ? 'bg-[#0B0B0C] border-[#EDEDED]/15 text-[#EDEDED] hover:bg-[#1C1C1F]'
+                    : 'bg-[#FAFAF7] border-[#1A1A1A]/15 text-[#1A1A1A] hover:bg-[#E8E6DF]'
+                }`}
               >
-                <RotateCcw className="w-4 h-4 text-indigo-400" />
-                <span>Retry Timed Exam</span>
+                <RotateCcw className="w-4 h-4" strokeWidth={1.5} />
+                <span>Retry timed exam</span>
               </button>
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-[#1A2033] bg-[#121626] flex items-center justify-between">
+        <div
+          className={`p-4 border-t flex items-center justify-between ${
+            isNightMode ? 'border-[#EDEDED]/10' : 'border-[#1A1A1A]/10'
+          }`}
+        >
           {!isSubmitted ? (
             <>
               <button
                 type="button"
                 onClick={() => setCurrentIndex((p) => Math.max(0, p - 1))}
                 disabled={currentIndex === 0}
-                className="px-3 py-1.5 rounded bg-[#181E32] text-white text-[12px] font-medium disabled:opacity-40 cursor-pointer"
+                className={`px-3 py-1.5 rounded-[6px] text-[13px] font-medium transition-colors duration-150 disabled:opacity-40 cursor-pointer ${
+                  isNightMode
+                    ? 'bg-[#0B0B0C] text-[#EDEDED] hover:bg-[#1C1C1F]'
+                    : 'bg-[#FAFAF7] text-[#1A1A1A] hover:bg-[#E8E6DF]'
+                }`}
               >
                 Previous
               </button>
@@ -231,16 +296,20 @@ export const TimedQuizModal: React.FC<TimedQuizModalProps> = ({
               <button
                 type="button"
                 onClick={() => setIsSubmitted(true)}
-                className="px-4 py-1.5 rounded bg-gradient-to-r from-emerald-600 to-teal-500 text-white text-[12px] font-semibold hover:opacity-95 cursor-pointer shadow-md"
+                className="px-4 py-1.5 rounded-[6px] bg-[#2D4A3E] hover:bg-[#375A4B] text-[#EDEDED] text-[13px] font-medium transition-colors duration-150 cursor-pointer"
               >
-                Submit Exam Now
+                Submit exam
               </button>
 
               <button
                 type="button"
                 onClick={() => setCurrentIndex((p) => Math.min(questions.length - 1, p + 1))}
                 disabled={currentIndex === questions.length - 1}
-                className="px-3 py-1.5 rounded bg-[#181E32] text-white text-[12px] font-medium disabled:opacity-40 cursor-pointer"
+                className={`px-3 py-1.5 rounded-[6px] text-[13px] font-medium transition-colors duration-150 disabled:opacity-40 cursor-pointer ${
+                  isNightMode
+                    ? 'bg-[#0B0B0C] text-[#EDEDED] hover:bg-[#1C1C1F]'
+                    : 'bg-[#FAFAF7] text-[#1A1A1A] hover:bg-[#E8E6DF]'
+                }`}
               >
                 Next
               </button>
@@ -249,9 +318,9 @@ export const TimedQuizModal: React.FC<TimedQuizModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="w-full py-2 rounded bg-indigo-600 text-white text-[13px] font-semibold hover:bg-indigo-500 cursor-pointer"
+              className="w-full py-2 rounded-[6px] bg-[#2D4A3E] hover:bg-[#375A4B] text-[#EDEDED] text-[13px] font-medium transition-colors duration-150 cursor-pointer"
             >
-              Close Exam Results
+              Close results
             </button>
           )}
         </div>

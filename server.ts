@@ -508,3 +508,74 @@ export default {
     return new Response('Not found', { status: 404 });
   },
 };
+
+// -------- Node.js Dev / Preview Server (Port 3000) --------
+if (typeof process !== 'undefined' && process.versions?.node) {
+  (async () => {
+    const dotenv = await import('dotenv');
+    dotenv.config();
+
+    const expressMod = await import('express');
+    const express = expressMod.default;
+    const app = express();
+
+    app.use('/api', express.raw({ type: '*/*', limit: '10mb' }), async (req, res) => {
+      try {
+        const protocol = req.protocol || 'http';
+        const host = req.get('host') || 'localhost:3000';
+        const fullUrl = `${protocol}://${host}${req.originalUrl}`;
+
+        const headers = new Headers();
+        for (const [k, v] of Object.entries(req.headers)) {
+          if (typeof v === 'string') headers.set(k, v);
+          else if (Array.isArray(v)) headers.set(k, v.join(', '));
+        }
+
+        const hasBody = req.method !== 'GET' && req.method !== 'HEAD';
+        const body = hasBody && Buffer.isBuffer(req.body) ? new Uint8Array(req.body) : undefined;
+
+        const webReq = new Request(fullUrl, {
+          method: req.method,
+          headers,
+          body,
+        });
+
+        const webRes = await handleApiRequest(webReq, {
+          GEMINI_API_KEY: process.env.GEMINI_API_KEY,
+          GROQ_API_KEY: process.env.GROQ_API_KEY,
+        });
+
+        res.status(webRes.status);
+        webRes.headers.forEach((value, key) => {
+          res.setHeader(key, value);
+        });
+        const buf = Buffer.from(await webRes.arrayBuffer());
+        res.send(buf);
+      } catch (err: any) {
+        res.status(500).json({ error: err?.message || 'Internal server error' });
+      }
+    });
+
+    if (process.env.NODE_ENV === 'production') {
+      const path = await import('path');
+      const distDir = path.resolve(process.cwd(), 'dist');
+      app.use(express.static(distDir));
+      app.get('*', (_req, res) => {
+        res.sendFile(path.join(distDir, 'index.html'));
+      });
+    } else {
+      const { createServer: createViteServer } = await import('vite');
+      const vite = await createViteServer({
+        server: { middlewareMode: true },
+        appType: 'spa',
+      });
+      app.use(vite.middlewares);
+    }
+
+    const PORT = Number(process.env.PORT) || 3000;
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`Notes2Quiz server listening on http://0.0.0.0:${PORT}`);
+    });
+  })();
+}
+

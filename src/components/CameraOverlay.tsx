@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Check } from 'lucide-react';
+import { X } from 'lucide-react';
 
 interface CameraOverlayProps {
   isOpen: boolean;
@@ -27,11 +27,11 @@ export const CameraOverlay: React.FC<CameraOverlayProps> = ({
       role="dialog"
       aria-modal="true"
       aria-label="Camera scan overlay for handwritten notes"
-      className="fixed inset-0 z-50 bg-[#0A0A0A] flex flex-col justify-between p-4 sm:p-6 text-[#FCFCFC] select-none"
+      className="fixed inset-0 z-50 bg-[#0B0B0C] flex flex-col justify-between p-4 sm:p-6 text-[#EDEDED] select-none"
     >
       {/* Top Bar */}
       <header className="w-full max-w-[720px] mx-auto flex items-center justify-between gap-3 shrink-0">
-        <div className="flex items-center gap-1.5 overflow-x-auto py-1 scrollbar-none">
+        <div className="flex items-center gap-1.5 overflow-x-auto py-1">
           {SUBJECTS.map((sub) => {
             const isSelected = selectedSubject === sub;
             return (
@@ -39,10 +39,10 @@ export const CameraOverlay: React.FC<CameraOverlayProps> = ({
                 key={sub}
                 type="button"
                 onClick={() => setSelectedSubject(sub)}
-                className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-all cursor-pointer whitespace-nowrap min-h-[36px] ${
+                className={`px-3 py-1.5 rounded-[6px] text-[13px] font-medium transition-colors duration-150 cursor-pointer whitespace-nowrap ${
                   isSelected
-                    ? 'bg-[#14AC8C] text-[#111111] font-semibold shadow-sm'
-                    : 'bg-[#1F1F1F] text-[#A1A1A1] hover:text-[#FCFCFC] hover:bg-[#282828]'
+                    ? 'bg-[#2D4A3E] text-[#EDEDED]'
+                    : 'bg-[#141416] text-[#8A8A8A] hover:text-[#EDEDED]'
                 }`}
               >
                 {sub}
@@ -55,71 +55,56 @@ export const CameraOverlay: React.FC<CameraOverlayProps> = ({
           type="button"
           onClick={onClose}
           aria-label="Close camera scanner"
-          className="w-10 h-10 rounded-full bg-[#1F1F1F] flex items-center justify-center text-[#A1A1A1] hover:text-[#FCFCFC] hover:bg-[#2A2A2A] transition-colors shrink-0 min-h-[40px] min-w-[40px]"
+          className="w-9 h-9 rounded-[6px] bg-[#141416] flex items-center justify-center text-[#8A8A8A] hover:text-[#EDEDED] transition-colors duration-150 shrink-0 cursor-pointer"
         >
-          <X className="w-5 h-5" />
+          <X className="w-5 h-5" strokeWidth={1.5} />
         </button>
       </header>
 
-      {/* Center: Fake camera preview area */}
+      {/* Center: Camera preview area */}
       <main className="w-full max-w-[720px] mx-auto flex-1 my-4 flex items-center justify-center">
-        <div className="relative w-full max-w-[460px] aspect-[3/4] sm:aspect-[4/5] rounded-[16px] bg-[#141414] border border-[#222222] overflow-hidden flex items-center justify-center shadow-2xl">
-          {/* Subtle simulated paper document inside frame */}
-          <div className="absolute inset-8 rounded-[8px] bg-[#1A1A1A]/80 border border-white/5 flex flex-col justify-between p-6 opacity-60 pointer-events-none">
-            <div className="space-y-3">
-              <div className="h-3 w-1/3 bg-[#333333] rounded" />
-              <div className="h-2 w-full bg-[#2A2A2A] rounded" />
-              <div className="h-2 w-5/6 bg-[#2A2A2A] rounded" />
-              <div className="h-2 w-4/6 bg-[#2A2A2A] rounded" />
-            </div>
-            <div className="space-y-2">
-              <div className="h-2 w-full bg-[#2A2A2A] rounded" />
-              <div className="h-2 w-3/4 bg-[#2A2A2A] rounded" />
-            </div>
-          </div>
-
+        <div className="relative w-full max-w-[460px] aspect-[3/4] sm:aspect-[4/5] rounded-none bg-[#141416] border border-[#EDEDED]/15 overflow-hidden flex items-center justify-center">
           {/* 3x3 Grid Overlay */}
           <div className="absolute inset-0 pointer-events-none grid grid-cols-3 grid-rows-3">
-            <div className="border-r border-b border-white/20" />
-            <div className="border-r border-b border-white/20" />
-            <div className="border-b border-white/20" />
-            <div className="border-r border-b border-white/20" />
-            <div className="border-r border-b border-white/20" />
-            <div className="border-b border-white/20" />
-            <div className="border-r border-white/20" />
-            <div className="border-r border-white/20" />
+            <div className="border-r border-b border-[#EDEDED]/10" />
+            <div className="border-r border-b border-[#EDEDED]/10" />
+            <div className="border-b border-[#EDEDED]/10" />
+            <div className="border-r border-b border-[#EDEDED]/10" />
+            <div className="border-r border-b border-[#EDEDED]/10" />
+            <div className="border-b border-[#EDEDED]/10" />
+            <div className="border-r border-[#EDEDED]/10" />
+            <div className="border-r border-[#EDEDED]/10" />
             <div />
           </div>
 
-          {/* 4 Teal Corner Brackets */}
-          <div className="absolute top-4 left-4 w-7 h-7 border-t-2 border-l-2 border-[#14AC8C] pointer-events-none" />
-          <div className="absolute top-4 right-4 w-7 h-7 border-t-2 border-r-2 border-[#14AC8C] pointer-events-none" />
-          <div className="absolute bottom-4 left-4 w-8 h-8 border-b-2 border-l-2 border-[#14AC8C] pointer-events-none" />
-          <div className="absolute bottom-4 right-4 w-8 h-8 border-b-2 border-r-2 border-[#14AC8C] pointer-events-none" />
+          {/* 4 Corner Brackets */}
+          <div className="absolute top-4 left-4 w-6 h-6 border-t-2 border-l-2 border-[#2D4A3E] pointer-events-none" />
+          <div className="absolute top-4 right-4 w-6 h-6 border-t-2 border-r-2 border-[#2D4A3E] pointer-events-none" />
+          <div className="absolute bottom-4 left-4 w-6 h-6 border-b-2 border-l-2 border-[#2D4A3E] pointer-events-none" />
+          <div className="absolute bottom-4 right-4 w-6 h-6 border-b-2 border-r-2 border-[#2D4A3E] pointer-events-none" />
 
           {/* Center scan label */}
           <div className="z-10 text-center px-4">
-            <span className="text-[12px] font-mono tracking-wider uppercase text-[#14AC8C] bg-[#0A0A0A]/80 px-2.5 py-1 rounded-full border border-[#14AC8C]/30">
+            <span className="text-[13px] font-medium text-[#EDEDED] bg-[#0B0B0C] px-3 py-1.5 rounded-[6px] border border-[#EDEDED]/15">
               Camera preview · {selectedSubject}
             </span>
           </div>
         </div>
       </main>
 
-      {/* Bottom Bar: Shutter button + helper line */}
+      {/* Bottom Bar: Shutter button */}
       <footer className="w-full max-w-[720px] mx-auto flex flex-col items-center gap-3 shrink-0 pb-2">
-        {/* 64px circular shutter button */}
         <button
           type="button"
           onClick={handleShutter}
           aria-label="Capture handwritten note photo"
           title="Capture notes"
-          className="w-16 h-16 rounded-full bg-white border-4 border-[#14AC8C] flex items-center justify-center active:scale-95 transition-all shadow-[0_0_24px_rgba(20,172,140,0.4)] cursor-pointer"
+          className="w-16 h-16 rounded-full bg-[#EDEDED] border-4 border-[#2D4A3E] flex items-center justify-center transition-opacity duration-150 hover:opacity-90 cursor-pointer"
         >
-          <div className="w-11 h-11 rounded-full bg-white active:bg-zinc-200 transition-colors" />
+          <div className="w-11 h-11 rounded-full bg-[#EDEDED]" />
         </button>
 
-        <p className="text-[13px] text-[#A1A1A1] text-center font-normal">
+        <p className="text-[13px] text-[#8A8A8A] text-center">
           Align your notes inside the frame
         </p>
       </footer>

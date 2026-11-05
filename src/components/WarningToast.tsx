@@ -25,20 +25,21 @@ export const WarningToast: React.FC<WarningToastProps> = ({
   return (
     <div
       role="alert"
-      className="sticky top-2 z-30 mx-auto max-w-[680px] w-full px-3 py-2.5 rounded-[12px] bg-[#2A1F00] border border-[#FFD166] text-[#FCFCFC] shadow-lg flex items-start gap-3 transition-all duration-300 animate-in fade-in slide-in-from-top-4"
+      className="fixed top-16 left-1/2 -translate-x-1/2 z-50 max-w-[640px] w-[90vw] px-4 py-2.5 rounded-[6px] bg-[#141416] border border-[#EDEDED]/15 text-[#EDEDED] shadow-[0_8px_24px_rgba(0,0,0,0.08)] flex items-start gap-3 transition-opacity duration-150"
     >
-      <div className="shrink-0 mt-0.5 text-[#FFD166]">
-        <AlertTriangle className="w-4 h-4" />
+      <div className="shrink-0 mt-0.5 text-[#8A8A8A]">
+        <AlertTriangle className="w-4 h-4" strokeWidth={1.5} />
       </div>
-      <p className="flex-1 text-[13px] leading-relaxed text-[#FFD166]/95">
-        Gemini free limit reached. The system has temporarily shifted to another AI. Results may be slightly different from previous ones.
+      <p className="flex-1 text-[13px] leading-[1.6] text-[#EDEDED]">
+        Primary model limit reached. Switched to fallback AI model; results may vary slightly.
       </p>
       <button
+        type="button"
         onClick={onDismiss}
         aria-label="Dismiss notification"
-        className="shrink-0 p-1 rounded-md text-[#FFD166]/80 hover:text-[#FFD166] hover:bg-[#FFD166]/10 transition-colors"
+        className="shrink-0 p-1 rounded-[4px] text-[#8A8A8A] hover:text-[#EDEDED] transition-colors duration-150 cursor-pointer"
       >
-        <X className="w-3.5 h-3.5" />
+        <X className="w-4 h-4" strokeWidth={1.5} />
       </button>
     </div>
   );
