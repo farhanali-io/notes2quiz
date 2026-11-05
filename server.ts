@@ -142,6 +142,9 @@ function normalizeStudyPack(raw: any, examDate?: string): any {
       concept: ar.concept || `Topic ${idx + 1}`,
     }));
   }
+  result.extractedThemes = Array.isArray(raw.extractedThemes)
+    ? raw.extractedThemes.map((t: any) => String(t).trim()).filter(Boolean)
+    : [];
   return result;
 }
 
@@ -306,8 +309,7 @@ export async function handleApiRequest(request: Request, env: Env): Promise<Resp
       return jsonResponse({ error: 'Notes text is required.' }, 400);
     }
 
-    // ✂️ Chhoti truncation — 524 timeout se bachne ke liye
-    const MAX_NOTES_LENGTH = 4000;
+    const MAX_NOTES_LENGTH = 15000;
     const truncatedNotes =
       notes.length > MAX_NOTES_LENGTH
         ? notes.slice(0, MAX_NOTES_LENGTH) + '\n\n[... notes truncated ...]'
@@ -316,6 +318,12 @@ export async function handleApiRequest(request: Request, env: Env): Promise<Resp
     const isUrdu = language === 'Roman Urdu';
     const systemPrompt = `You are Notes2Quiz, an expert academic tutor for university students in Pakistan.
 Turn the user's study notes into high-yield, structured study materials.
+
+CRITICAL RULES:
+1. You must extract core themes and generate all study materials STRICTLY AND ONLY from the provided Study Notes below.
+2. Do NOT use any external knowledge, do NOT hallucinate, and do NOT invent topics. If the notes are about Data Structures (e.g., Arrays, Linked Lists, Trees), your output must ONLY be about Data Structures.
+3. If the provided notes are too short or unclear, extract whatever you can, but NEVER invent unrelated academic topics.
+
 Language: ${language}. ${
       isUrdu
         ? 'IMPORTANT: Respond completely in Roman Urdu (Urdu in English alphabet). Keep technical terms in English.'
@@ -325,6 +333,7 @@ Target Exam Date: ${examDate || 'General revision'}.
 Generate ONLY these sections: ${JSON.stringify(selectedFeatures)}.
 Respond with valid JSON matching this schema:
 {
+  "extractedThemes": ["Theme 1 from notes", "Theme 2 from notes", "Theme 3 from notes", "Theme 4 from notes"],
   "simplifiedNotes": { "title": "...", "sections": [{ "heading": "...", "content": "..." }] },
   "keyPoints": { "summary": "...", "points": ["..."] },
   "mcqs": [{ "question": "...", "options": ["..."], "correctAnswer": "...", "explanation": "..." }],

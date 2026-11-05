@@ -795,7 +795,7 @@ export default function App() {
 
   return (
     <div
-      className={`h-screen w-screen flex overflow-hidden select-text relative font-sans transition-colors ${
+      className={`h-[100dvh] w-screen flex overflow-hidden select-text relative font-sans transition-colors ${
         isNightMode ? 'bg-[#0B0B0C] text-[#EDEDED] dark' : 'bg-[#FAFAF7] text-[#1A1A1A]'
       }`}
     >

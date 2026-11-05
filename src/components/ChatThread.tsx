@@ -74,8 +74,8 @@ export const ChatThread: React.FC<ChatThreadProps> = ({
   const showThinking = isGenerating || messages.some((m) => m.isThinking);
 
   return (
-    <main className="flex-1 overflow-y-auto px-4 sm:px-6 py-6">
-      <div className="max-w-[740px] mx-auto w-full space-y-6">
+    <main className="flex-1 w-full overflow-y-auto px-4 sm:px-6 py-4 sm:py-6">
+      <div className="max-w-[740px] mx-auto w-full space-y-4 sm:space-y-6">
         {/* Message history */}
         {messages
           .filter((msg) => !msg.isThinking)
@@ -112,7 +112,7 @@ export const ChatThread: React.FC<ChatThreadProps> = ({
 
         {/* Quick sample starter buttons when only the greeting is present */}
         {(step === 0 || hasOnlyGreeting) && !showThinking && (
-          <div className="pt-1 pl-10 space-y-2">
+          <div className="pt-1 pl-0 sm:pl-10 space-y-2">
             <span
               className={`text-[12px] font-medium block ${
                 isNightMode ? 'text-[#8A8A8A]' : 'text-[#6B6B6B]'
@@ -120,11 +120,11 @@ export const ChatThread: React.FC<ChatThreadProps> = ({
             >
               Sample course notes
             </span>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex overflow-x-auto sm:flex-wrap whitespace-nowrap gap-2 hide-scrollbar">
               <button
                 type="button"
                 onClick={() => onLoadSampleNotes('bio')}
-                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-[6px] border text-[13px] font-medium transition-colors duration-150 cursor-pointer ${
+                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-[6px] border text-[13px] font-medium transition-colors duration-150 shrink-0 cursor-pointer ${
                   isNightMode
                     ? 'bg-[#141416] hover:bg-[#1C1C1F] text-[#EDEDED] border-[#EDEDED]/10'
                     : 'bg-[#F2F1EC] hover:bg-[#E8E6DF] text-[#1A1A1A] border-[#1A1A1A]/10'
@@ -137,7 +137,7 @@ export const ChatThread: React.FC<ChatThreadProps> = ({
               <button
                 type="button"
                 onClick={() => onLoadSampleNotes('cs')}
-                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-[6px] border text-[13px] font-medium transition-colors duration-150 cursor-pointer ${
+                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-[6px] border text-[13px] font-medium transition-colors duration-150 shrink-0 cursor-pointer ${
                   isNightMode
                     ? 'bg-[#141416] hover:bg-[#1C1C1F] text-[#EDEDED] border-[#EDEDED]/10'
                     : 'bg-[#F2F1EC] hover:bg-[#E8E6DF] text-[#1A1A1A] border-[#1A1A1A]/10'
@@ -150,7 +150,7 @@ export const ChatThread: React.FC<ChatThreadProps> = ({
               <button
                 type="button"
                 onClick={() => onLoadSampleNotes('pak')}
-                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-[6px] border text-[13px] font-medium transition-colors duration-150 cursor-pointer ${
+                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-[6px] border text-[13px] font-medium transition-colors duration-150 shrink-0 cursor-pointer ${
                   isNightMode
                     ? 'bg-[#141416] hover:bg-[#1C1C1F] text-[#EDEDED] border-[#EDEDED]/10'
                     : 'bg-[#F2F1EC] hover:bg-[#E8E6DF] text-[#1A1A1A] border-[#1A1A1A]/10'

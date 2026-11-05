@@ -61,27 +61,7 @@ export const StudyPackViewer: React.FC<StudyPackViewerProps> = ({
     setTimeout(() => setExportToast(null), 3000);
   };
 
-  const mcqs =
-    data.mcqs && data.mcqs.length > 0
-      ? data.mcqs
-      : [
-          {
-            id: 'mcq-sample-1',
-            question:
-              'During the complete oxidation of one molecule of glucose, how many total molecules of NADH are generated specifically within the mitochondrial matrix prior to the electron transport chain?',
-            options: ['2 NADH', '6 NADH', '8 NADH', '10 NADH'],
-            correctIndex: 2,
-            correctAnswer: '8 NADH',
-            explanation:
-              '2 NADH are synthesized by the Pyruvate Dehydrogenase complex (converting 2 pyruvates to acetyl-CoA) inside the matrix + 6 NADH from 2 full turns of the Citric Acid Cycle = 8 mitochondrial NADH total.',
-            theme: 'Krebs Substrates & Yields',
-            difficulty: 'High' as const,
-            mnemonic:
-              'Can I Keep Selling Substances For Money, Officer? (Citrate, Isocitrate, a-Ketoglutarate, Succinyl-CoA, Succinate, Fumarate, Malate, Oxaloacetate)',
-            notes:
-              'The 2 cytosolic NADH from glycolysis require the malate-aspartate or glycerol-3-phosphate shuttle to enter.',
-          },
-        ];
+  const mcqs: MCQItem[] = Array.isArray(data.mcqs) ? data.mcqs : [];
 
   const currentMcq: MCQItem = mcqs[currentMcqIndex] || mcqs[0];
   const selectedOption = selectedAnswers[currentMcqIndex];
@@ -191,7 +171,7 @@ export const StudyPackViewer: React.FC<StudyPackViewerProps> = ({
 
   return (
     <div
-      className={`rounded-none overflow-hidden space-y-5 transition-colors duration-150 ${
+      className={`w-full rounded-none overflow-hidden space-y-5 transition-colors duration-150 ${
         isNightMode
           ? 'bg-[#141416] text-[#EDEDED]'
           : 'bg-[#F2F1EC] text-[#1A1A1A]'
@@ -212,14 +192,14 @@ export const StudyPackViewer: React.FC<StudyPackViewerProps> = ({
 
       {/* Top Header */}
       <div
-        className={`p-5 border-b flex items-center justify-between gap-3 ${
+        className={`p-4 sm:p-5 border-b flex items-center justify-between gap-3 ${
           isNightMode ? 'border-[#EDEDED]/10' : 'border-[#1A1A1A]/10'
         }`}
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 min-w-0">
           <GraduationCap className="w-5 h-5 shrink-0" strokeWidth={1.5} />
-          <div>
-            <h2 className="font-medium text-[16px] tracking-[-0.01em]">
+          <div className="min-w-0">
+            <h2 className="font-medium text-[15px] sm:text-[16px] tracking-[-0.01em] break-words">
               {sessionTitle}
             </h2>
             <p
@@ -242,7 +222,7 @@ export const StudyPackViewer: React.FC<StudyPackViewerProps> = ({
       </div>
 
       {/* Module Switcher Tabs */}
-      <div className="px-5 flex items-center gap-1.5 overflow-x-auto pb-1 text-[13px]">
+      <div className="px-4 sm:px-5 flex items-center gap-1.5 overflow-x-auto whitespace-nowrap hide-scrollbar pb-1 text-[13px]">
         <button
           type="button"
           onClick={() => setActiveTab('mcqs')}
@@ -355,11 +335,21 @@ export const StudyPackViewer: React.FC<StudyPackViewerProps> = ({
       </div>
 
       {/* TAB CONTENT 1: MCQs */}
-      {activeTab === 'mcqs' && (
-        <div className="px-5 py-2 space-y-4">
+      {activeTab === 'mcqs' && !currentMcq && (
+        <div
+          className={`px-4 sm:px-5 py-6 text-[14px] ${
+            isNightMode ? 'text-[#8A8A8A]' : 'text-[#6B6B6B]'
+          }`}
+        >
+          No multiple choice questions in this study pack. Select another tab above to view your generated materials.
+        </div>
+      )}
+
+      {activeTab === 'mcqs' && currentMcq && (
+        <div className="px-4 sm:px-5 py-2 space-y-4">
           {/* Question Metadata */}
           <div
-            className={`flex items-center justify-between text-[12px] ${
+            className={`flex flex-wrap items-center justify-between gap-1 text-[12px] ${
               isNightMode ? 'text-[#8A8A8A]' : 'text-[#6B6B6B]'
             }`}
           >
@@ -371,22 +361,22 @@ export const StudyPackViewer: React.FC<StudyPackViewerProps> = ({
           </div>
 
           {/* Question Stem */}
-          <h3 className="text-[16px] font-medium leading-[1.6]">
+          <h3 className="text-[15px] sm:text-[16px] font-medium leading-[1.6] break-words">
             {currentMcq.question}
           </h3>
 
           {/* Option Buttons */}
-          <div className="space-y-2 pt-1">
+          <div className="flex flex-col space-y-2 pt-1">
             {currentMcq.options.map((opt, optIdx) => {
               const isThisSelected = selectedOption === optIdx;
               const isThisCorrect = optIdx === currentMcq.correctIndex;
 
               return (
-                <div key={optIdx} className="space-y-2">
+                <div key={optIdx} className="space-y-2 w-full">
                   <button
                     type="button"
                     onClick={() => handleSelectOption(optIdx)}
-                    className={`w-full text-left p-3.5 rounded-[6px] flex items-center justify-between gap-3 transition-colors duration-150 cursor-pointer border ${
+                    className={`w-full text-left py-3 px-3.5 rounded-[6px] flex items-center justify-between gap-3 transition-colors duration-150 cursor-pointer border ${
                       isThisSelected && isThisCorrect
                         ? 'bg-[#2D4A3E] border-[#2D4A3E] text-[#EDEDED]'
                         : isThisSelected && !isThisCorrect
@@ -402,9 +392,9 @@ export const StudyPackViewer: React.FC<StudyPackViewerProps> = ({
                         : 'bg-[#FAFAF7] border-[#1A1A1A]/10 hover:bg-[#E8E6DF] text-[#1A1A1A]'
                     }`}
                   >
-                    <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex items-start sm:items-center gap-3 min-w-0">
                       <span
-                        className={`w-6 h-6 rounded-[4px] flex items-center justify-center text-[12px] font-medium shrink-0 ${
+                        className={`w-6 h-6 rounded-[4px] flex items-center justify-center text-[12px] font-medium shrink-0 mt-0.5 sm:mt-0 ${
                           isThisSelected && isThisCorrect
                             ? 'bg-[#0B0B0C]/30 text-[#EDEDED]'
                             : isThisSelected && !isThisCorrect
@@ -416,7 +406,9 @@ export const StudyPackViewer: React.FC<StudyPackViewerProps> = ({
                       >
                         {String.fromCharCode(65 + optIdx)}
                       </span>
-                      <span className="text-[14px] truncate">{opt}</span>
+                      <span className="text-[14px] leading-[1.5] break-words text-left">
+                        {opt}
+                      </span>
                     </div>
 
                     {isThisCorrect && isAnswered && (
@@ -562,7 +554,7 @@ export const StudyPackViewer: React.FC<StudyPackViewerProps> = ({
 
       {/* TAB CONTENT 2: Exam Notes */}
       {activeTab === 'exam_notes' && data.examNotes && (
-        <div className="px-5 py-2 space-y-6">
+        <div className="px-4 sm:px-5 py-2 space-y-6">
           <div className="space-y-3">
             <h4 className="text-[14px] font-medium flex items-center gap-2">
               <FileText className="w-4 h-4" strokeWidth={1.5} />
@@ -577,7 +569,7 @@ export const StudyPackViewer: React.FC<StudyPackViewerProps> = ({
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <p className="text-[14px] font-medium">{sq.question}</p>
+                    <p className="text-[14px] font-medium break-words">{sq.question}</p>
                     <span
                       className={`text-[12px] shrink-0 ${
                         isNightMode ? 'text-[#8A8A8A]' : 'text-[#6B6B6B]'
@@ -587,7 +579,7 @@ export const StudyPackViewer: React.FC<StudyPackViewerProps> = ({
                     </span>
                   </div>
                   <p
-                    className={`text-[13px] leading-[1.6] ${
+                    className={`text-[13px] leading-[1.6] break-words ${
                       isNightMode ? 'text-[#8A8A8A]' : 'text-[#6B6B6B]'
                     }`}
                   >
@@ -616,7 +608,7 @@ export const StudyPackViewer: React.FC<StudyPackViewerProps> = ({
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <h5 className="text-[14px] font-medium">{lq.question}</h5>
+                    <h5 className="text-[14px] font-medium break-words">{lq.question}</h5>
                     <span
                       className={`text-[12px] shrink-0 ${
                         isNightMode ? 'text-[#8A8A8A]' : 'text-[#6B6B6B]'
@@ -626,7 +618,7 @@ export const StudyPackViewer: React.FC<StudyPackViewerProps> = ({
                     </span>
                   </div>
                   <div
-                    className={`text-[13px] space-y-1.5 pt-1 ${
+                    className={`text-[13px] space-y-1.5 pt-1 break-words ${
                       isNightMode ? 'text-[#8A8A8A]' : 'text-[#6B6B6B]'
                     }`}
                   >
@@ -646,15 +638,15 @@ export const StudyPackViewer: React.FC<StudyPackViewerProps> = ({
 
       {/* TAB CONTENT 3: Flashcards */}
       {activeTab === 'flashcards' && data.flashcards && (
-        <div className="px-5 py-2">
+        <div className="px-4 sm:px-5 py-2">
           <Flashcard cards={data.flashcards} isNightMode={isNightMode} />
         </div>
       )}
 
       {/* TAB CONTENT 4: Simplified Notes */}
       {activeTab === 'simplified' && data.simplifiedNotes && (
-        <div className="px-5 py-2 space-y-3">
-          <h3 className="text-[15px] font-medium">{data.simplifiedNotes.title}</h3>
+        <div className="px-4 sm:px-5 py-2 space-y-3">
+          <h3 className="text-[15px] font-medium break-words">{data.simplifiedNotes.title}</h3>
           {data.simplifiedNotes.sections?.map((sec, i) => (
             <div
               key={i}
@@ -662,9 +654,9 @@ export const StudyPackViewer: React.FC<StudyPackViewerProps> = ({
                 isNightMode ? 'bg-[#0B0B0C]' : 'bg-[#FAFAF7]'
               }`}
             >
-              <h4 className="text-[14px] font-medium">{sec.heading}</h4>
+              <h4 className="text-[14px] font-medium break-words">{sec.heading}</h4>
               <p
-                className={`text-[14px] leading-[1.6] whitespace-pre-line ${
+                className={`text-[14px] leading-[1.6] whitespace-pre-line break-words ${
                   isNightMode ? 'text-[#8A8A8A]' : 'text-[#6B6B6B]'
                 }`}
               >
@@ -677,9 +669,9 @@ export const StudyPackViewer: React.FC<StudyPackViewerProps> = ({
 
       {/* TAB CONTENT 5: Key Points */}
       {activeTab === 'key_points' && data.keyPoints && (
-        <div className="px-5 py-2 space-y-3">
+        <div className="px-4 sm:px-5 py-2 space-y-3">
           <p
-            className={`text-[13px] ${
+            className={`text-[13px] break-words ${
               isNightMode ? 'text-[#8A8A8A]' : 'text-[#6B6B6B]'
             }`}
           >
@@ -687,7 +679,7 @@ export const StudyPackViewer: React.FC<StudyPackViewerProps> = ({
           </p>
           <ul className="space-y-2">
             {data.keyPoints.points?.map((pt, i) => (
-              <li key={i} className="flex items-start gap-2.5 text-[14px] leading-[1.6]">
+              <li key={i} className="flex items-start gap-2.5 text-[14px] leading-[1.6] break-words">
                 <span className="text-[#2D4A3E] font-medium">·</span>
                 <span>{pt}</span>
               </li>
@@ -698,7 +690,7 @@ export const StudyPackViewer: React.FC<StudyPackViewerProps> = ({
 
       {/* TAB CONTENT 6: Revision Plan */}
       {activeTab === 'revision' && data.revisionPlan && (
-        <div className="px-5 py-2">
+        <div className="px-4 sm:px-5 py-2">
           <RevisionPlan
             examDate={examDate || data.revisionPlan.examDate}
             totalDays={data.revisionPlan.totalDays}
@@ -710,23 +702,23 @@ export const StudyPackViewer: React.FC<StudyPackViewerProps> = ({
 
       {/* TAB CONTENT 7: Active Recall */}
       {activeTab === 'active_recall' && data.activeRecall && (
-        <div className="px-5 py-2">
+        <div className="px-4 sm:px-5 py-2">
           <ActiveRecall items={data.activeRecall} isNightMode={isNightMode} />
         </div>
       )}
 
       {/* Bottom Export & Action Bar */}
       <div
-        className={`p-4 border-t flex flex-wrap items-center justify-between gap-3 ${
+        className={`p-4 border-t flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
           isNightMode ? 'border-[#EDEDED]/10' : 'border-[#1A1A1A]/10'
         }`}
       >
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center overflow-x-auto whitespace-nowrap gap-2 hide-scrollbar w-full sm:w-auto">
           <button
             type="button"
             onClick={handleDownloadPDF}
             disabled={isExporting}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-[6px] transition-colors duration-150 text-[12px] font-medium border cursor-pointer ${
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-[6px] transition-colors duration-150 text-[12px] font-medium border shrink-0 cursor-pointer ${
               isNightMode
                 ? 'bg-[#0B0B0C] text-[#EDEDED] hover:bg-[#1C1C1F] border-[#EDEDED]/10'
                 : 'bg-[#FAFAF7] text-[#1A1A1A] hover:bg-[#E8E6DF] border-[#1A1A1A]/10'
@@ -740,7 +732,7 @@ export const StudyPackViewer: React.FC<StudyPackViewerProps> = ({
             type="button"
             onClick={handleDownloadDOCX}
             disabled={isExporting}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-[6px] transition-colors duration-150 text-[12px] font-medium border cursor-pointer ${
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-[6px] transition-colors duration-150 text-[12px] font-medium border shrink-0 cursor-pointer ${
               isNightMode
                 ? 'bg-[#0B0B0C] text-[#EDEDED] hover:bg-[#1C1C1F] border-[#EDEDED]/10'
                 : 'bg-[#FAFAF7] text-[#1A1A1A] hover:bg-[#E8E6DF] border-[#1A1A1A]/10'
@@ -753,7 +745,7 @@ export const StudyPackViewer: React.FC<StudyPackViewerProps> = ({
           <button
             type="button"
             onClick={handleDownloadMD}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-[6px] transition-colors duration-150 text-[12px] font-medium border cursor-pointer ${
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-[6px] transition-colors duration-150 text-[12px] font-medium border shrink-0 cursor-pointer ${
               isNightMode
                 ? 'bg-[#0B0B0C] text-[#EDEDED] hover:bg-[#1C1C1F] border-[#EDEDED]/10'
                 : 'bg-[#FAFAF7] text-[#1A1A1A] hover:bg-[#E8E6DF] border-[#1A1A1A]/10'
@@ -766,7 +758,7 @@ export const StudyPackViewer: React.FC<StudyPackViewerProps> = ({
           <button
             type="button"
             onClick={handleDownloadTXT}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-[6px] transition-colors duration-150 text-[12px] font-medium border cursor-pointer ${
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-[6px] transition-colors duration-150 text-[12px] font-medium border shrink-0 cursor-pointer ${
               isNightMode
                 ? 'bg-[#0B0B0C] text-[#EDEDED] hover:bg-[#1C1C1F] border-[#EDEDED]/10'
                 : 'bg-[#FAFAF7] text-[#1A1A1A] hover:bg-[#E8E6DF] border-[#1A1A1A]/10'
@@ -779,7 +771,7 @@ export const StudyPackViewer: React.FC<StudyPackViewerProps> = ({
           <button
             type="button"
             onClick={handleShare}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-[6px] transition-colors duration-150 text-[12px] font-medium border cursor-pointer ${
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-[6px] transition-colors duration-150 text-[12px] font-medium border shrink-0 cursor-pointer ${
               isNightMode
                 ? 'bg-[#0B0B0C] text-[#EDEDED] hover:bg-[#1C1C1F] border-[#EDEDED]/10'
                 : 'bg-[#FAFAF7] text-[#1A1A1A] hover:bg-[#E8E6DF] border-[#1A1A1A]/10'
@@ -793,7 +785,7 @@ export const StudyPackViewer: React.FC<StudyPackViewerProps> = ({
         <button
           type="button"
           onClick={onStartTimedQuiz}
-          className="flex items-center gap-2 px-3.5 py-1.5 rounded-[6px] bg-[#2D4A3E] hover:bg-[#375A4B] text-[#EDEDED] text-[13px] font-medium transition-colors duration-150 cursor-pointer shrink-0"
+          className="w-full sm:w-auto flex items-center justify-center gap-2 px-3.5 py-2 sm:py-1.5 rounded-[6px] bg-[#2D4A3E] hover:bg-[#375A4B] text-[#EDEDED] text-[13px] font-medium transition-colors duration-150 cursor-pointer shrink-0"
         >
           <Clock className="w-4 h-4" strokeWidth={1.5} />
           <span>Timed mode</span>

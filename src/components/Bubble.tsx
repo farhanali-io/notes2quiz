@@ -32,7 +32,7 @@ export const Bubble: React.FC<BubbleProps> = ({
   if (sender === 'user') {
     return (
       <div className="flex justify-end w-full">
-        <div className="max-w-[90%] sm:max-w-[80%] space-y-2">
+        <div className="max-w-[90%] md:max-w-[75%] space-y-2">
           {/* File attachments */}
           {attachments && attachments.length > 0 && (
             <div className="flex flex-wrap items-center justify-end gap-2">
@@ -72,7 +72,7 @@ export const Bubble: React.FC<BubbleProps> = ({
 
           {/* User Message */}
           <div
-            className={`rounded-[6px] px-4 py-3 text-[15px] leading-[1.6] ${
+            className={`rounded-[6px] px-4 py-3 text-[15px] leading-[1.6] break-words ${
               isNightMode
                 ? 'bg-[#141416] text-[#EDEDED]'
                 : 'bg-[#F2F1EC] text-[#1A1A1A]'
@@ -111,9 +111,9 @@ export const Bubble: React.FC<BubbleProps> = ({
         <BookOpen className="w-4 h-4" strokeWidth={1.5} />
       </div>
 
-      <div className="flex-1 max-w-[94%] sm:max-w-[88%] space-y-2">
+      <div className="flex-1 max-w-[90%] md:max-w-[75%] min-w-0 space-y-2">
         <div
-          className={`rounded-[6px] px-4 py-3 text-[15px] leading-[1.6] ${
+          className={`rounded-[6px] px-4 py-3 text-[15px] leading-[1.6] break-words ${
             isNightMode
               ? 'bg-[#141416] text-[#EDEDED]'
               : 'bg-[#F2F1EC] text-[#1A1A1A]'

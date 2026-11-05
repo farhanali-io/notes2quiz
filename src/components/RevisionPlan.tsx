@@ -25,14 +25,14 @@ export const RevisionPlan: React.FC<RevisionPlanProps> = ({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="w-full space-y-4">
       <div
         className={`flex flex-wrap items-center justify-between gap-2 pb-3 border-b text-[13px] ${
           isNightMode ? 'border-[#EDEDED]/10' : 'border-[#1A1A1A]/10'
         }`}
       >
         <div className="flex items-center gap-2">
-          <Calendar className="w-4 h-4" strokeWidth={1.5} />
+          <Calendar className="w-4 h-4 shrink-0" strokeWidth={1.5} />
           <span>Target exam: {examDate}</span>
         </div>
         <span className={isNightMode ? 'text-[#8A8A8A]' : 'text-[#6B6B6B]'}>
@@ -56,7 +56,7 @@ export const RevisionPlan: React.FC<RevisionPlanProps> = ({
             />
 
             <div
-              className={`rounded-none p-4 space-y-2.5 ${
+              className={`w-full rounded-none p-3.5 sm:p-4 space-y-2.5 ${
                 isNightMode ? 'bg-[#0B0B0C]' : 'bg-[#FAFAF7]'
               }`}
             >
@@ -75,12 +75,12 @@ export const RevisionPlan: React.FC<RevisionPlanProps> = ({
                     isNightMode ? 'text-[#8A8A8A]' : 'text-[#6B6B6B]'
                   }`}
                 >
-                  <Clock className="w-3.5 h-3.5" strokeWidth={1.5} />
+                  <Clock className="w-3.5 h-3.5 shrink-0" strokeWidth={1.5} />
                   <span>{day.duration}</span>
                 </div>
               </div>
 
-              <h4 className="text-[14px] font-medium">{day.topic}</h4>
+              <h4 className="text-[14px] font-medium break-words">{day.topic}</h4>
 
               <ul className="space-y-1.5 pt-1">
                 {day.tasks.map((task, tIdx) => {
@@ -112,7 +112,7 @@ export const RevisionPlan: React.FC<RevisionPlanProps> = ({
                           strokeWidth={1.5}
                         />
                       </button>
-                      <span className={isDone ? 'line-through opacity-60' : ''}>
+                      <span className={`break-words ${isDone ? 'line-through opacity-60' : ''}`}>
                         {task}
                       </span>
                     </li>

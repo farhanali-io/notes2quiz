@@ -32,12 +32,7 @@ interface StudyStrategyCardProps {
 
 export const StudyStrategyCard: React.FC<StudyStrategyCardProps> = ({
   notesWordCount = 380,
-  extractedThemes = [
-    'Glycolysis to Pyruvate Decarboxylation',
-    'Krebs Substrates, Isomerases & NADH Yields',
-    'Electron Transport Chain Complex I-IV Gradient',
-    'ATP Synthase F0/F1 Chemiosmotic Coupling',
-  ],
+  extractedThemes = [],
   selectedFeatures,
   onToggleFeature,
   onSelectAllFeatures,
@@ -83,7 +78,7 @@ export const StudyStrategyCard: React.FC<StudyStrategyCardProps> = ({
 
   return (
     <div
-      className={`rounded-none p-5 sm:p-6 space-y-6 transition-colors duration-150 ${
+      className={`w-full rounded-none p-4 sm:p-6 space-y-5 sm:space-y-6 transition-colors duration-150 ${
         isNightMode
           ? 'bg-[#141416] text-[#EDEDED]'
           : 'bg-[#F2F1EC] text-[#1A1A1A]'
@@ -111,32 +106,34 @@ export const StudyStrategyCard: React.FC<StudyStrategyCardProps> = ({
         </span>
       </div>
 
-      {/* Extracted Core Themes */}
-      <div className="space-y-3">
-        <p
-          className={`text-[13px] ${
-            isNightMode ? 'text-[#8A8A8A]' : 'text-[#6B6B6B]'
-          }`}
-        >
-          Extracted {extractedThemes.length} core themes
-        </p>
+      {/* Extracted Core Themes (only rendered when returned by API) */}
+      {extractedThemes && extractedThemes.length > 0 && (
+        <div className="space-y-3">
+          <p
+            className={`text-[13px] ${
+              isNightMode ? 'text-[#8A8A8A]' : 'text-[#6B6B6B]'
+            }`}
+          >
+            Extracted {extractedThemes.length} core themes
+          </p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {extractedThemes.map((theme, i) => (
-            <div
-              key={i}
-              className={`flex items-center gap-2 px-3 py-2 text-[13px] ${
-                isNightMode
-                  ? 'bg-[#0B0B0C] text-[#EDEDED]'
-                  : 'bg-[#FAFAF7] text-[#1A1A1A]'
-              }`}
-            >
-              <Target className="w-3.5 h-3.5 shrink-0" strokeWidth={1.5} />
-              <span className="truncate">{theme}</span>
-            </div>
-          ))}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            {extractedThemes.map((theme, i) => (
+              <div
+                key={i}
+                className={`flex items-start gap-2 px-3 py-2 text-[13px] min-w-0 ${
+                  isNightMode
+                    ? 'bg-[#0B0B0C] text-[#EDEDED]'
+                    : 'bg-[#FAFAF7] text-[#1A1A1A]'
+                }`}
+              >
+                <Target className="w-3.5 h-3.5 shrink-0 mt-0.5" strokeWidth={1.5} />
+                <span className="break-words min-w-0">{theme}</span>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Choose Study Strategy Header & Select All */}
       <div className="flex items-center justify-between">
@@ -202,12 +199,12 @@ export const StudyStrategyCard: React.FC<StudyStrategyCardProps> = ({
                   )}
                 </div>
 
-                <div>
-                  <h4 className="text-[13px] font-medium leading-snug">
+                <div className="min-w-0">
+                  <h4 className="text-[13px] font-medium leading-snug break-words">
                     {feat.name}
                   </h4>
                   <p
-                    className={`text-[12px] leading-snug line-clamp-2 mt-1 ${
+                    className={`text-[12px] leading-snug line-clamp-2 mt-1 break-words ${
                       isNightMode ? 'text-[#8A8A8A]' : 'text-[#6B6B6B]'
                     }`}
                   >
@@ -299,7 +296,7 @@ export const StudyStrategyCard: React.FC<StudyStrategyCardProps> = ({
       {/* Date Picker Input Box if expanded */}
       {showDatePicker && (
         <div
-          className={`p-3 rounded-[6px] border flex items-center gap-3 ${
+          className={`p-3 rounded-[6px] border flex flex-wrap items-center gap-3 ${
             isNightMode
               ? 'bg-[#0B0B0C] border-[#EDEDED]/15'
               : 'bg-[#FAFAF7] border-[#1A1A1A]/15'

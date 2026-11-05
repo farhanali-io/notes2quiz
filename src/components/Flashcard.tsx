@@ -39,7 +39,7 @@ export const Flashcard: React.FC<FlashcardProps> = ({ cards, isNightMode = true 
   };
 
   return (
-    <div className="space-y-4">
+    <div className="w-full space-y-4">
       {/* Flashcard surface (0px radius on card) */}
       <div
         onClick={toggleFlip}
@@ -52,7 +52,7 @@ export const Flashcard: React.FC<FlashcardProps> = ({ cards, isNightMode = true 
           }
         }}
         aria-label="Flashcard. Press to flip."
-        className={`group relative min-h-[176px] rounded-none border p-5 flex flex-col justify-between cursor-pointer transition-colors duration-150 select-none ${
+        className={`w-full group relative min-h-[176px] rounded-none border p-4 sm:p-5 flex flex-col justify-between cursor-pointer transition-colors duration-150 select-none ${
           isNightMode
             ? 'bg-[#0B0B0C] border-[#EDEDED]/10 hover:bg-[#1C1C1F]/60 text-[#EDEDED]'
             : 'bg-[#FAFAF7] border-[#1A1A1A]/10 hover:bg-[#E8E6DF]/60 text-[#1A1A1A]'
@@ -63,17 +63,17 @@ export const Flashcard: React.FC<FlashcardProps> = ({ cards, isNightMode = true 
             isNightMode ? 'text-[#8A8A8A]' : 'text-[#6B6B6B]'
           }`}
         >
-          <span className="font-medium">
+          <span className="font-medium break-words">
             {isFlipped ? 'Answer' : 'Question'}
             {currentCard.keyTerm ? ` · ${currentCard.keyTerm}` : ''}
           </span>
-          <span>
+          <span className="shrink-0 ml-2">
             {currentIdx + 1} / {cards.length}
           </span>
         </div>
 
         <div className="my-auto py-4 text-center sm:text-left">
-          <p className="text-[16px] font-medium leading-[1.6]">
+          <p className="text-[15px] sm:text-[16px] font-medium leading-[1.6] break-words">
             {isFlipped ? currentCard.back : currentCard.front}
           </p>
         </div>

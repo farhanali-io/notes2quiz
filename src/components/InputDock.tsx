@@ -116,7 +116,7 @@ export const InputDock: React.FC<InputDockProps> = ({
 
   return (
     <footer
-      className={`w-full px-4 sm:px-6 py-3 shrink-0 select-none border-t ${
+      className={`w-full px-2 sm:px-6 pt-2.5 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shrink-0 select-none border-t ${
         isNightMode
           ? 'bg-[#0B0B0C] border-[#EDEDED]/10'
           : 'bg-[#FAFAF7] border-[#1A1A1A]/10'
@@ -124,7 +124,7 @@ export const InputDock: React.FC<InputDockProps> = ({
     >
       <div className="max-w-[740px] mx-auto w-full space-y-2.5">
         {/* Suggestion Row */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-0.5 text-[12px]">
+        <div className="flex items-center overflow-x-auto whitespace-nowrap gap-2 hide-scrollbar text-[12px]">
           {suggestions.map((s, idx) => (
             <button
               key={idx}
@@ -149,7 +149,7 @@ export const InputDock: React.FC<InputDockProps> = ({
 
         {/* Input Container */}
         <div
-          className={`rounded-[6px] border p-2.5 transition-colors duration-150 ${
+          className={`w-full rounded-[6px] border p-2.5 transition-colors duration-150 ${
             isNightMode
               ? 'bg-[#141416] border-[#EDEDED]/15 focus-within:border-[#2D4A3E]'
               : 'bg-[#F2F1EC] border-[#1A1A1A]/15 focus-within:border-[#2D4A3E]'

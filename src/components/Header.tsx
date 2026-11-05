@@ -111,7 +111,7 @@ export const Header: React.FC<HeaderProps> = ({
               className="flex items-center gap-1.5 cursor-pointer group min-w-0"
             >
               <h1
-                className={`font-medium text-[14px] sm:text-[15px] tracking-[-0.01em] truncate max-w-[160px] sm:max-w-[340px] ${
+                className={`font-medium text-[14px] sm:text-[15px] tracking-[-0.01em] truncate max-w-[130px] sm:max-w-[340px] ${
                   isNightMode ? 'text-[#EDEDED]' : 'text-[#1A1A1A]'
                 }`}
               >
@@ -140,7 +140,7 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       {/* Right Controls: Language segmented control + Share + Theme toggle + Avatar dot */}
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
         {/* Language Segmented Control */}
         <div
           className={`flex items-center rounded-[6px] p-0.5 text-[12px] border ${
@@ -152,7 +152,8 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             type="button"
             onClick={() => onToggleLanguage('English')}
-            className={`px-2.5 py-1 rounded-[4px] font-medium transition-colors duration-150 cursor-pointer ${
+            aria-label="Switch language to English"
+            className={`px-2 sm:px-2.5 py-1 rounded-[4px] font-medium transition-colors duration-150 cursor-pointer ${
               language === 'English'
                 ? 'bg-[#2D4A3E] text-[#EDEDED]'
                 : isNightMode
@@ -160,12 +161,14 @@ export const Header: React.FC<HeaderProps> = ({
                 : 'text-[#6B6B6B] hover:text-[#1A1A1A]'
             }`}
           >
-            English
+            <span className="sm:hidden">EN</span>
+            <span className="hidden sm:inline">English</span>
           </button>
           <button
             type="button"
             onClick={() => onToggleLanguage('Roman Urdu')}
-            className={`px-2.5 py-1 rounded-[4px] font-medium transition-colors duration-150 cursor-pointer ${
+            aria-label="Switch language to Roman Urdu"
+            className={`px-2 sm:px-2.5 py-1 rounded-[4px] font-medium transition-colors duration-150 cursor-pointer ${
               language === 'Roman Urdu'
                 ? 'bg-[#2D4A3E] text-[#EDEDED]'
                 : isNightMode
@@ -174,16 +177,18 @@ export const Header: React.FC<HeaderProps> = ({
             }`}
             title="Roman Urdu mode (Urdu in English alphabet)"
           >
-            Roman Urdu
+            <span className="sm:hidden">UR</span>
+            <span className="hidden sm:inline">Roman Urdu</span>
           </button>
         </div>
 
-        {/* Share Button (Plain text secondary button) */}
+        {/* Share Button (Icon-only on mobile, text on sm+) */}
         <button
           type="button"
           onClick={onShareSession}
           title="Share study session"
-          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-[6px] text-[13px] font-medium transition-colors duration-150 cursor-pointer ${
+          aria-label="Share study session"
+          className={`flex items-center gap-1.5 p-1.5 sm:px-2.5 sm:py-1.5 rounded-[6px] text-[13px] font-medium transition-colors duration-150 cursor-pointer ${
             isNightMode
               ? 'text-[#8A8A8A] hover:text-[#EDEDED] hover:bg-[#141416]'
               : 'text-[#6B6B6B] hover:text-[#1A1A1A] hover:bg-[#F2F1EC]'
