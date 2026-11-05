@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import {
   Paperclip,
   ArrowUp,
@@ -7,6 +7,8 @@ import {
   FileText,
   X,
   FileCode,
+  Upload,
+  AlertCircle,
 } from 'lucide-react';
 
 interface InputDockProps {
@@ -18,6 +20,7 @@ interface InputDockProps {
   onSend: () => void;
   onOpenCamera: () => void;
   onSelectSuggestionPrompt?: (prompt: string) => void;
+  onValidationError?: (message: string) => void;
   isParsingFile?: boolean;
   disabled?: boolean;
   disabledReason?: string;
@@ -35,6 +38,7 @@ export const InputDock: React.FC<InputDockProps> = ({
   onSend,
   onOpenCamera,
   onSelectSuggestionPrompt,
+  onValidationError,
   isParsingFile = false,
   disabled = false,
   disabledReason,
@@ -44,6 +48,12 @@ export const InputDock: React.FC<InputDockProps> = ({
 }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploadBoxOpen, setIsUploadBoxOpen] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+  const ACCEPTED_EXTENSIONS = ['pdf', 'docx', 'txt', 'md'];
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -64,10 +74,37 @@ export const InputDock: React.FC<InputDockProps> = ({
     }
   };
 
+  const validateAndAddFiles = (files: File[]) => {
+    const validFiles: File[] = [];
+    for (const file of files) {
+      const ext = file.name.split('.').pop()?.toLowerCase() || '';
+      if (!ACCEPTED_EXTENSIONS.includes(ext)) {
+        const msg = 'Invalid file type. Please upload a PDF, DOCX, TXT, or MD file.';
+        setUploadError(msg);
+        onValidationError?.(msg);
+        return;
+      }
+      if (file.size > MAX_FILE_SIZE) {
+        const msg =
+          'File is too large. Please upload a file smaller than 5MB to ensure smooth AI processing.';
+        setUploadError(msg);
+        onValidationError?.(msg);
+        return;
+      }
+      validFiles.push(file);
+    }
+
+    if (validFiles.length > 0) {
+      setUploadError(null);
+      onAddFiles(validFiles);
+      setIsUploadBoxOpen(false);
+    }
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
-      onAddFiles(Array.from(files));
+      validateAndAddFiles(Array.from(files));
       e.target.value = '';
     }
   };
@@ -75,6 +112,16 @@ export const InputDock: React.FC<InputDockProps> = ({
   const triggerFileInput = () => {
     if (!disabled && !isParsingFile) {
       fileInputRef.current?.click();
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (disabled || isParsingFile) return;
+    const files = Array.from(e.dataTransfer.files || []);
+    if (files.length > 0) {
+      validateAndAddFiles(files);
     }
   };
 
@@ -219,20 +266,118 @@ export const InputDock: React.FC<InputDockProps> = ({
 
           {/* Bottom Dock Control Bar */}
           <div
-            className={`flex items-center justify-between pt-2 gap-2 border-t ${
+            className={`relative flex items-center justify-between pt-2 gap-2 border-t ${
               isNightMode ? 'border-[#EDEDED]/10' : 'border-[#1A1A1A]/10'
             }`}
           >
+            {/* Floating File Upload Box */}
+            {isUploadBoxOpen && (
+              <div
+                role="dialog"
+                aria-label="Upload study files"
+                className={`fixed inset-x-0 bottom-24 mx-auto w-[90%] max-w-[400px] sm:absolute sm:inset-x-auto sm:bottom-full sm:left-0 sm:mb-2 sm:w-[380px] z-40 rounded-[6px] border p-4 shadow-[0_8px_24px_rgba(0,0,0,0.08)] space-y-3 ${
+                  isNightMode
+                    ? 'bg-[#141416] border-[#EDEDED]/15 text-[#EDEDED]'
+                    : 'bg-[#F2F1EC] border-[#1A1A1A]/15 text-[#1A1A1A]'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-[13px] font-medium">Upload study notes</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsUploadBoxOpen(false);
+                      setUploadError(null);
+                    }}
+                    aria-label="Close upload box"
+                    className={`p-1 rounded-[4px] cursor-pointer transition-colors duration-150 ${
+                      isNightMode
+                        ? 'text-[#8A8A8A] hover:text-[#EDEDED] hover:bg-[#1C1C1F]'
+                        : 'text-[#6B6B6B] hover:text-[#1A1A1A] hover:bg-[#E8E6DF]'
+                    }`}
+                  >
+                    <X className="w-4 h-4" strokeWidth={1.5} />
+                  </button>
+                </div>
+
+                {/* Drag and Drop Area */}
+                <div
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setIsDragging(true);
+                  }}
+                  onDragLeave={() => setIsDragging(false)}
+                  onDrop={handleDrop}
+                  className={`rounded-[6px] border border-dashed p-4 text-center space-y-3 transition-colors duration-150 ${
+                    isDragging
+                      ? 'border-[#2D4A3E] bg-[#2D4A3E]/10'
+                      : isNightMode
+                      ? 'border-[#EDEDED]/15 bg-[#0B0B0C]'
+                      : 'border-[#1A1A1A]/15 bg-[#FAFAF7]'
+                  }`}
+                >
+                  <div className="flex flex-col items-center gap-1.5">
+                    <Upload
+                      className={`w-5 h-5 ${
+                        isNightMode ? 'text-[#8A8A8A]' : 'text-[#6B6B6B]'
+                      }`}
+                      strokeWidth={1.5}
+                    />
+                    <p className="text-[13px] font-medium">Drag and drop files here</p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={triggerFileInput}
+                    className="w-full sm:w-auto px-3.5 py-2 rounded-[6px] bg-[#2D4A3E] hover:bg-[#375A4B] text-[#EDEDED] text-[13px] font-medium transition-colors duration-150 cursor-pointer"
+                  >
+                    Select from device
+                  </button>
+
+                  {/* Helper Text */}
+                  <div
+                    className={`text-sm space-y-0.5 pt-1 ${
+                      isNightMode ? 'text-[#8A8A8A]' : 'text-[#6B6B6B]'
+                    }`}
+                  >
+                    <p>Accepted formats: PDF, DOCX, TXT, MD</p>
+                    <p>Max file size: 5MB</p>
+                  </div>
+                </div>
+
+                {/* Inline Validation Error */}
+                {uploadError && (
+                  <div
+                    role="alert"
+                    className={`flex items-start gap-2 p-2.5 rounded-[6px] border text-[12px] leading-snug ${
+                      isNightMode
+                        ? 'bg-[#2A1717] border-[#7F2F2F] text-[#EDEDED]'
+                        : 'bg-[#F5E6E6] border-[#B85C5C] text-[#1A1A1A]'
+                    }`}
+                  >
+                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" strokeWidth={1.5} />
+                    <span>{uploadError}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Left Action Buttons: Paperclip + Camera */}
             <div className="flex items-center gap-1">
               <button
                 type="button"
-                onClick={triggerFileInput}
+                onClick={() => {
+                  setUploadError(null);
+                  setIsUploadBoxOpen((p) => !p);
+                }}
                 disabled={disabled || isParsingFile}
                 title="Attach study files (.pdf, .docx, .txt, .md)"
                 aria-label="Attach study files"
+                aria-expanded={isUploadBoxOpen}
                 className={`p-1.5 rounded-[6px] flex items-center justify-center transition-colors duration-150 cursor-pointer ${
-                  isNightMode
+                  isUploadBoxOpen
+                    ? 'bg-[#2D4A3E] text-[#EDEDED]'
+                    : isNightMode
                     ? 'text-[#8A8A8A] hover:text-[#EDEDED] hover:bg-[#1C1C1F]'
                     : 'text-[#6B6B6B] hover:text-[#1A1A1A] hover:bg-[#E8E6DF]'
                 }`}
@@ -265,7 +410,7 @@ export const InputDock: React.FC<InputDockProps> = ({
               ref={fileInputRef}
               type="file"
               multiple
-              accept=".pdf,.docx,.txt,.md,.png,.jpg,.jpeg,.webp"
+              accept=".pdf,.docx,.txt,.md"
               onChange={handleFileChange}
               className="hidden"
               aria-hidden="true"

@@ -356,7 +356,29 @@ export default function App() {
   // The file should only stay in the input bar. The user must be able to add more text or more files.
   // Only when the user clicks the send button should the bot start working."
   const handleAddFiles = (newFiles: File[]) => {
-    setAttachedFiles((prev) => [...prev, ...newFiles]);
+    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+    const ACCEPTED_EXTENSIONS = ['pdf', 'docx', 'txt', 'md'];
+    const validFiles: File[] = [];
+
+    for (const file of newFiles) {
+      const ext = file.name.split('.').pop()?.toLowerCase() || '';
+      if (!ACCEPTED_EXTENSIONS.includes(ext)) {
+        showAppToast('Invalid file type. Please upload a PDF, DOCX, TXT, or MD file.', 'info');
+        return;
+      }
+      if (file.size > MAX_FILE_SIZE) {
+        showAppToast(
+          'File is too large. Please upload a file smaller than 5MB to ensure smooth AI processing.',
+          'info'
+        );
+        return;
+      }
+      validFiles.push(file);
+    }
+
+    if (validFiles.length > 0) {
+      setAttachedFiles((prev) => [...prev, ...validFiles]);
+    }
   };
 
   const handleRemoveAttachedFile = (index: number) => {
@@ -905,6 +927,7 @@ export default function App() {
           onSend={handleSendInput}
           onOpenCamera={() => setIsCameraOpen(true)}
           onSelectSuggestionPrompt={(p) => setInputText(p)}
+          onValidationError={(msg) => showAppToast(msg, 'info')}
           isParsingFile={isParsingFile}
           disabled={isGenerating}
           disabledReason={isGenerating ? 'Synthesizing your academic study pack…' : undefined}
